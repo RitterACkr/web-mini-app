@@ -1,0 +1,108 @@
+html {
+    height: 100%;
+    box-sizing: border-box;
+}
+
+/* Theme */
+:root {
+    --bg: #f3f4f6;
+    --panel: rgba(211, 211, 211, 0.9);
+    --screen-bg: #ffffff;
+    --btn-bg: #ececee;
+    --ac-btn-bg: hsl(0, 91%, 79%);
+    --operator-btn-bg: hsl(31, 71%, 89%);
+    --equal-btn-bg: hsl(32, 88%, 59%);
+    --font-sans: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --radius: 10px;
+}
+
+*, *::before, *::after { box-sizing: inherit; }
+
+body {
+    background: var(--bg);
+    font-family: var(--font-sans);
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    min-height: 100vh;
+    padding: 24px;
+}
+
+.wrapper {
+    /* サイズはw,h ビューポートの90%に */
+    width: 90vh;
+    max-width: 1080px;
+
+    height: 90vh;
+    max-height: 820px;
+
+    overflow: auto;
+    margin-inline: auto;
+
+    background: var(--panel);
+    border-radius: var(--radius);
+    padding: 8px;
+    
+}
+
+.display {
+    background-color: var(--screen-bg);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column; /* 縦並びにする */
+    margin: 24px;
+    padding: 16px;
+    text-align: right;
+}
+
+.formula {
+    font-size: 4rem;
+}
+
+.prediction {
+    font-size: 2rem;
+    color: gray;
+    min-height: 2.4rem; /* 空のときの高さを確保 */
+}
+
+.calc-btns {
+    margin: 36px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4列に分割 */
+    gap: 4px;
+    justify-content: center;
+    align-items: center;
+}
+
+/* calc-btns -> calc-btn-row -> <button>たち
+ * calc-btn-rowをdisplay: contentsで無効化して<button>たちにgridを適用させる
+ * => ボタンが4列に並ぶ & サイズが均等になる
+ */
+.calc-btn-row {
+    display: contents;
+}
+
+.calc-btns button {
+    font-size: 3rem;
+    height: 6rem;
+    margin: 4px;
+    border-radius: 450%;
+    border: none;   
+    background-color: var(--btn-bg);
+}
+
+.calc-btns button:active {
+    transform: scale(0.95);
+}
+
+.calc-btn-row .ac-btn {
+    background-color: var(--ac-btn-bg);
+}
+
+.calc-btn-row .operator-btn {
+    background-color: var(--operator-btn-bg);
+}
+
+.calc-btn-row .equal-btn {
+    background-color: var(--equal-btn-bg);
+}
