@@ -77,6 +77,19 @@ body {
 .formula {
     font-size: 4rem;
     color: var(--text-main);
+
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+
+    scrollbar-width: none;
+    cursor: grab;
+}
+.formula::-webkit-scrollbar {
+    display: none;
+}
+.formula.dragging {
+    cursor: grabbing;
 }
 
 .prediction {
