@@ -1,6 +1,7 @@
 let tokens = ["0"];
+let autoScrollFormula = true;
 
-const OPS = new Set(["+", "−", "×", "÷"]);
+const OPS = new Set(["+", "-", "×", "÷"]);
 
 const formula = document.querySelector(".formula");
 const predict = document.querySelector(".prediction");
@@ -33,6 +34,12 @@ function exprString() {
 // === Init ===
 function init() {
     render();
+
+    const formulaEl = document.querySelector(".formula");
+    enableDragScroll(formulaEl, (shouldFollow) => {
+        autoScrollFormula = shouldFollow;
+    });
+
     document.querySelector(".calc-btns").addEventListener("click", (e) => {
         const btn = e.target.closest("button");
         if (!btn) return;
@@ -77,9 +84,9 @@ function inputDot() {
 function inputOperator(op) {
     const last = lastToken();
 
-    // −の場合のみ 先頭となる場合は 負を表現するとして特別に追加
+    // -の場合のみ 先頭となる場合は 負を表現するとして特別に追加
     if (tokens.length === 1 && last === "0") {
-        if (op === "−") tokens = ["−"];
+        if (op === "-") tokens = ["-"];
         return;
     }
 
@@ -91,7 +98,7 @@ function inputOperator(op) {
 
     // -の場合のみ "(" の後であるなら 負を表す表現として特別に追加
     if (last === "(") {
-        if (op === "−") tokens.push("−");
+        if (op === "-") tokens.push("-");
         return;
     }
 
@@ -159,7 +166,7 @@ function backspace() {
 
     if (isNumberToken(last)) {
         const trim = last.slice(0, -1);
-        if (trim === "" || trim === "−") {
+        if (trim === "" || trim === "-") {
             tokens.pop();
         } else {
             replaceLast(trim);
@@ -201,7 +208,7 @@ function onButtonClick(value) {
                 break;
             
             case "+":
-            case "−":
+            case "-":
             case "×":
             case "÷":
                 inputOperator(value);
@@ -219,6 +226,7 @@ function onButtonClick(value) {
     }
 
     render();
+    scrollToEnd();
 }
 
 
@@ -226,11 +234,13 @@ function onButtonClick(value) {
 function render() {
     const expr = exprString();
     formula.innerText = expr;
+    console.log(tokens);
 
-    // 予測表示 (今は未使用)
+    // 予測表示
     const predicted = tryEvaluate(expr);
     if (predicted != null) {
-        predict.innerText = String(predicted);
+        // 12桁の有効数字 -> .0000の表記を省略
+        predict.innerText = String(predicted.toPrecision(8).replace(/\.?0+$/, ""));
         predict.style.visibility = "visible";
         predict.setAttribute("aria-hidden", "false");
     } else {
@@ -246,7 +256,7 @@ function render() {
 function canPredict(tokens) {
     if (tokens.length === 0) return false;
 
-    const ops = new Set(["+", "−", "×", "÷"]);
+    const ops = new Set(["+", "-", "×", "÷"]);
 
     // 最後が演算子 or "(" なら未完成
     const last = tokens[tokens.length - 1];
@@ -305,10 +315,31 @@ function tokenize(expr) {
             num += ch;
             continue;
         }
+
+        // 指数表記
+        // 直前に数値, 直後に [+|-]?digit なら指数部とみなす
+        if ((ch === "e" || ch === "E") && num !== "") {
+            const next = expr[i + 1];
+            const next2 = expr[i + 2];
+
+            const isNextDigit = next >= "0" && next <= "9";
+            const isNextSignThenDigit =
+                (next === "+" || next === "-") && (next2 >= "0" && next2 <= "9");
+
+            if (isNextDigit || isNextSignThenDigit) {
+                num += "e";
+                if (next === "+" || next === "-") {
+                    num += (next === "-" ? "-" : next);
+                    i++;
+                }
+                continue;
+            }
+        }
+
         if (ch === " ") continue;
 
         // 演算子・括弧
-        if (ch === "+" || ch === "−" || ch === "×" || ch === "÷" || ch === "%" || ch === "(" || ch === ")") {
+        if (ch === "+" || ch === "-" || ch === "×" || ch === "÷" || ch === "%" || ch === "(" || ch === ")") {
             pushNum();
             out.push(ch);
             continue;
@@ -324,7 +355,7 @@ function tokenize(expr) {
     }
 
     pushNum();
-    return tokens;
+    return out;
 }
 
 /**
@@ -350,7 +381,7 @@ function evaluateTokens(tok) {
     // expression := term (("+" | "-") term)*
     function parseExpression() {
         let value = parseTerm();
-        while (peek() === "+" || peek() === "−") {
+        while (peek() === "+" || peek() === "-") {
             const op = next();
             const rhs = parseTerm();
             value = op === "+" ? value + rhs : value - rhs;
@@ -375,13 +406,14 @@ function evaluateTokens(tok) {
 
     // factor := number | "(" expression ")" | ("+" | "-") factor
     function parseFactor() {
+        let value;
         const t = peek();
 
         // 単項
-        if (t === "+" || t === "−") {
+        if (t === "+" || t === "-") {
             const op = next();
             const v = parseFactor();
-            return op === "−" ? -v : v;
+            return op === "-" ? -v : v;
         }
 
         // 括弧
@@ -396,6 +428,7 @@ function evaluateTokens(tok) {
         if (t == null) throw new Error("Unexpected end");
         if (!isNaN(t)) {
             next();
+            // t.replace("-", "-")
             const num = Number(t);
             if (!Number.isFinite(num)) throw new Error(`Invalid number: ${t}`);
             value = num;
@@ -426,10 +459,73 @@ function evaluateTokens(tok) {
 init();
 
 
-// === Theme ===
+// === 各種Helper ===
+
 function toggleTheme() {
     const body = document.body;
     const isDark = body.classList.contains("dark-theme");
     body.classList.remove("dark-theme");
     body.classList.add(isDark ? "" : "dark-theme");
+}
+
+// 自動で数式の最後尾に合わせる
+function scrollToEnd() {
+    const el = document.querySelector(".formula");
+    if (!el || !autoScrollFormula) return;
+    el.scrollLeft = el.scrollWidth;
+}
+
+// ドラッグ or 指 でスクロール
+function enableDragScroll(el, onUserScrollStateChange) {
+    let isDown = false;
+    let startX = 0;
+    let startScrollLeft = 0;
+    let moved = false;
+
+    const nearRightEdge = () => 
+        (el.scrollWidth - (el.scrollLeft + el.clientWidth)) < 12;
+
+    el.addEventListener("mousedown", (e) => {
+        // 左クリック時
+        if (e.button !== 0) return;
+
+        isDown = true;
+        moved = false;
+        startX = e.pageX;
+        startScrollLeft = el.scrollLeft;
+        el.classList.add("dragging");
+
+        onUserScrollStateChange?.(false);
+    });
+
+    window.addEventListener("mousemove", (e) => {
+        if (!isDown) return;
+
+        const dx = e.pageX - startX;
+        if (Math.abs(dx) > 2) moved = true;
+
+        el.scrollLeft = startScrollLeft - dx;
+    });
+
+    window.addEventListener("mouseup", () => {
+        if (!isDown) return;
+
+        isDown = false;
+        el.classList.remove("dragging");
+
+        onUserScrollStateChange?.(nearRightEdge());
+    });
+
+    // テキスト選択の防止
+    el.addEventListener("dragstart", (e) => e.preventDefault());
+
+    // ホイールやタッチスクロールにも対応
+    el.addEventListener("scroll", () => {
+        onUserScrollStateChange?.(nearRightEdge());
+    }, { passive: true });
+
+    // クリックとドラッグの誤動作防止
+    el.addEventListener("click", (e) => {
+        if (moved) e.preventDefault();
+    });
 }
