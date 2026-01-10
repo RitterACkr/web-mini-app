@@ -50,6 +50,9 @@ function inputDigit(d) {
         return;
     }
 
+    // 最後が"%"なら変更なしで終了
+    if (last === "%") return;
+
     if (isNumberToken(last)) {
         replaceLast(last + d);
     } else {
@@ -61,10 +64,12 @@ function inputDot() {
     const last = lastToken();
 
     if (isNumberToken(last)) {
-        if (last.includes(".")) return; // 最後が.なら変更なしで終了
+        if (last.includes(".")) return; // 最後が"."なら変更なしで終了
         replaceLast(last + ".");
         return;
     }
+
+    if (last === "%") return; // "%"なら変更なしで終了
 
     tokens.push("0.");
 }
@@ -133,7 +138,7 @@ function inputParenToggle() {
 
 function inputPercent() {
     const last = lastToken();
-    if (isNumberToken(last) || last === ")") {
+    if (isNumberToken(last)) {
         if (lastToken() === "%") return;
         tokens.push("%");
     }
@@ -221,7 +226,6 @@ function onButtonClick(value) {
 function render() {
     const expr = exprString();
     formula.innerText = expr;
-    console.log(tokens);
 
     // 予測表示 (今は未使用)
     const predicted = tryEvaluate(expr);
@@ -420,3 +424,12 @@ function evaluateTokens(tok) {
 
 
 init();
+
+
+// === Theme ===
+function toggleTheme() {
+    const body = document.body;
+    const isDark = body.classList.contains("dark-theme");
+    body.classList.remove("dark-theme");
+    body.classList.add(isDark ? "" : "dark-theme");
+}
