@@ -15,7 +15,7 @@ function hex2(n) {
 
 // サンプルプログラム
 // 5 + 7 -> 12 を出力
-const ROM = new Uint8Array([
+const PROGRAM = new Uint8Array([
     OP.LDA_IMM, 5,
     OP.LDB_IMM, 7,
     OP.ADD,
@@ -24,8 +24,8 @@ const ROM = new Uint8Array([
 ]);
 
 class CPU {
-    constructor(rom) {
-        this.rom = rom;
+    constructor(memorySize = 256) {
+        this.mem = new Uint8Array(memorySize);
         this.reset();
     }
 
@@ -41,9 +41,16 @@ class CPU {
         this.output = [];
     }
 
+    load(program, startAddr = 0x00) {
+        for (let i = 0; i < program.length; i++) {
+            this.mem[(startAddr + i) & 0xFF] = program[i] & 0xFF;
+        }
+        this.pc = startAddr & 0xFF;
+    }
+
     fetch() { 
         // PCが範囲外ならHALT扱い
-        const v = this.rom[this.pc];
+        const v = this.mem[this.pc];
         this.pc = (this.pc + 1) & 0xFF;
         return v ?? OP.HALT;
     }
@@ -99,13 +106,21 @@ const btnRun = document.getElementById("run");
 const btnStop = document.getElementById("stop");
 const btnReset = document.getElementById("reset");
 
-const cpu = new CPU(ROM);
+const cpu = new CPU();
 
+// サンプルプログラムの実行
+cpu.load(PROGRAM);
+
+
+
+// ==================
+// Render
+// ==================
 function renderROM() {
     // PCの位置をハイライト
     let s = "";
-    for (let i = 0; i < ROM.length; i++) {
-        const byte = `${hex2(i)}: ${hex2(ROM[i])}`;
+    for (let i = 0; i < PROGRAM.length; i++) {
+        const byte = `${hex2(i)}: ${hex2(cpu.mem[i])}`;
         s += (i === cpu.pc ? `<span class="line-hi">${byte}</span>` : byte) + "\n";
     }
     elROM.innerHTML = s;
@@ -120,6 +135,10 @@ function render() {
     elOut.textContent = cpu.output.join("\n") + (cpu.halted ? "\n\n(HALTED)" : "");
 }
 
+
+// ==================
+// Controls
+// ==================
 let timer = null;
 
 btnStep.addEventListener("click", () => {
@@ -165,6 +184,7 @@ btnReset.addEventListener("click", () => {
         timer = null;
     }
     cpu.reset();
+    cpu.load(PROGRAM);
     btnRun.disabled = false;
     btnStop.disabled = true;
     render();
