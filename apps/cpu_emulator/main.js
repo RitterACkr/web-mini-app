@@ -4,10 +4,11 @@
 const OP = {
     LDA_IMM: 0x01,  // A = imm8
     LDB_IMM: 0x02,  // B = imm8
-    ADD:     0x03,  // A = (A+B)&25, Z set
+    ADD:     0x03,  // A = (A+B)&0xFF, Z set
     PRINTA:  0x04,  // print A
-    JMP:     0x10,  // Jump addr
-    JZ:      0x11,  // Jump if Zero addr
+    DEC_A:   0x05,  // A = (A-1)&0xFF, Z set
+    JMP:     0x10,  // PC = addr
+    JZ:      0x11,  // if Z==1: PC = addr
     HALT:    0xFF
 };
 
@@ -18,9 +19,12 @@ function hex2(n) {
 // サンプルプログラム
 // print Aの無限ループ (STOPで止める)
 const PROGRAM = new Uint8Array([
-    OP.LDA_IMM, 5,
-    OP.PRINTA,
-    OP.JMP, 0x00
+    OP.LDA_IMM, 5,  // 00 01
+    OP.PRINTA,      // 02
+    OP.DEC_A,       // 03
+    OP.JZ, 0x08,    // 04 05
+    OP.JMP, 0x02,   // 06 07
+    OP.HALT         // 08
 ]);
 
 class CPU {
@@ -80,6 +84,11 @@ class CPU {
             }
             case OP.PRINTA: {
                 this.output.push(String(this.a));
+                break;
+            }
+            case OP.DEC_A: {
+                this.a = (this.a - 1) & 0xFF;
+                this.z = (this.a === 0) ? 1 : 0;
                 break;
             }
             case OP.JMP: {
