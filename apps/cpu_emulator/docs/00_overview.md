@@ -6,8 +6,8 @@ CPUの基本構造を理解
 JS による最小CPUエミュレータの実装
 
 ## CPUの構成
-- レジスタ (内部変数)
-- プログラムカウンタ (pc)
+- [レジスタ (内部変数)](02_registers.md#registers-レジスタ)
+- [プログラムカウンタ (pc)](02_registers.md#pc-program-counter)
 - 命令デコーダ
 - 演算装置 (ALU)
 
