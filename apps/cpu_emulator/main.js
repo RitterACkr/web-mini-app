@@ -6,6 +6,8 @@ const OP = {
     LDB_IMM: 0x02,  // B = imm8
     ADD:     0x03,  // A = (A+B)&25, Z set
     PRINTA:  0x04,  // print A
+    JMP:     0x10,  // Jump addr
+    JZ:      0x11,  // Jump if Zero addr
     HALT:    0xFF
 };
 
@@ -80,6 +82,18 @@ class CPU {
             }
             case OP.PRINTA: {
                 this.output.push(String(this.a));
+                break;
+            }
+            case OP.JMP: {
+                const addr = this.fetch();
+                this.pc = addr & 0xFF;
+                break;
+            }
+            case OP.JZ: {
+                const addr = this.fetch();
+                if (this.z === 1) {
+                    this.pc = addr & 0xFF;
+                }
                 break;
             }
             case OP.HALT:
