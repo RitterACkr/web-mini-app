@@ -6,6 +6,8 @@ const OP = {
     LDB_IMM: 0x02,  // B = imm8
     ADD:     0x03,  // A = (A+B)&25, Z set
     PRINTA:  0x04,  // print A
+    JMP:     0x10,  // Jump addr
+    JZ:      0x11,  // Jump if Zero addr
     HALT:    0xFF
 };
 
@@ -14,13 +16,11 @@ function hex2(n) {
 }
 
 // サンプルプログラム
-// 5 + 7 -> 12 を出力
+// print Aの無限ループ (STOPで止める)
 const PROGRAM = new Uint8Array([
     OP.LDA_IMM, 5,
-    OP.LDB_IMM, 7,
-    OP.ADD,
     OP.PRINTA,
-    OP.HALT
+    OP.JMP, 0x00
 ]);
 
 class CPU {
@@ -82,6 +82,18 @@ class CPU {
                 this.output.push(String(this.a));
                 break;
             }
+            case OP.JMP: {
+                const addr = this.fetch();
+                this.pc = addr & 0xFF;
+                break;
+            }
+            case OP.JZ: {
+                const addr = this.fetch();
+                if (this.z === 1) {
+                    this.pc = addr & 0xFF;
+                }
+                break;
+            }
             case OP.HALT:
             default:
                 this.halted = true;
@@ -132,7 +144,8 @@ function render() {
     elB.textContent = `$${hex2(cpu.b)} (${cpu.b})`;
     elZ.textContent = `${cpu.z}`;
     renderROM();
-    elOut.textContent = cpu.output.join("\n") + (cpu.halted ? "\n\n(HALTED)" : "");
+    const lines = cpu.output.slice(-50);
+    elOut.textContent = lines.join("\n") + (cpu.halted ? "\n\n(HALTED)" : "");
 }
 
 
