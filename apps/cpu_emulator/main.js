@@ -21,26 +21,137 @@ function hex2(n) {
     return n.toString(16).toUpperCase().padStart(2, "0");
 }
 
-// サンプルプログラム
-// - RAMの導入
-const VAR_ADDR = 0x80;  // 80
+// ==================
+// Assembler
+// ==================
+const INSTR_SIZE = {
+    LDA_IMM:    2,
+    LDB_IMM:    2,
+    ADD:        1,
+    PRINTA:     1,
+    DEC_A:      1,
+    LDA_MEM:    2,
+    STA_MEM:    2,
+    JMP:        2,
+    JZ:         2,
+    HALT:       1
+};
 
-// print Aの無限ループ (STOPで止める)
-const PROGRAM = new Uint8Array([
-    OP.LDA_IMM, 5,          // 00 01
-    OP.STA_MEM, VAR_ADDR,   // 02 03
+function parseNumber(token) {
+    if (/^0x[0-9a-f]+$/i.test(token)) return parseInt(token, 16);
+    if (/^-?\d+$/.test(token)) return parseInt(token, 10);
+    return null;
+}
 
-    OP.LDA_MEM, VAR_ADDR,   // 04 05
-    OP.PRINTA,              // 06
-    OP.DEC_A,               // 07
-    OP.STA_MEM, VAR_ADDR,   // 08 09
-    OP.JZ, 0x0E,            // 0A 0B
-    OP.JMP, 0x04,           // 0C 0D
+function tokenize(line) {
+    // コメントの除去
+    const noComment = line.split(";")[0].trim();
+    if (!noComment) return [];
 
-    OP.LDA_MEM, VAR_ADDR,   // 0E 0F
-    OP.PRINTA,              // 10
-    OP.HALT                 // 11
-]);
+    // , 区切りも空白として扱う
+    return noComment.replace(/,/g, " ").trim().split(/\s+/);
+}
+
+function assemble(asm) {
+    const lines = asm.split("\n");
+
+    // 1. lebel -> addr
+    const labels = new Map();
+    let pc = 0;
+
+    for (const raw of lines) {
+        const line = raw.trim();
+        if (!line || line.startsWith(";")) continue;
+        
+        // label:
+        if (/^[A-Za-z_]\w*:\s*$/.test(line)) {
+            const label = line.slice(0, -1);
+            labels.set(label, pc & 0xFF);
+            continue;
+        }
+
+        const t = tokenize(line);
+        if (t.length === 0) continue;
+
+        const op = t[0].toUpperCase();
+        const size = INSTR_SIZE[op];
+        if (!size) throw new Error(`Unknown instruction: ${op}`);
+
+        pc += size;
+    }
+
+    // 2. emit bytes
+    const out = [];
+    pc = 0;
+
+    for (const raw of lines) {
+        const line = raw.trim();
+        if (!line || line.startsWith(";")) continue;
+
+        // label:
+        if (/^[A-Za-z_]\w*:\s*$/.test(line)) continue;
+
+        const t = tokenize(line);
+        if (t.length === 0) continue;
+
+        const opName =t[0].toUpperCase();
+        const opcode = OP[opName];
+        if (opcode === undefined) throw new Error(`Unknown opcode: ${opName}`);
+
+        out.push(opcode);
+        pc++;
+
+        const size = INSTR_SIZE[opName];
+
+        if (size === 2) {
+            if (t.length < 2) throw new Error(`Missing operand for ${opName}`);
+
+            const operandToken = t[1];
+            let val = parseNumber(operandToken);
+
+            if (val === null) {
+                if (!labels.has(operandToken)) {
+                    throw new Error(`Unknown label: ${operandToken}`);
+                }
+                val = labels.get(operandToken);
+            }
+
+            out.push(val & 0xFF);
+            pc++;
+        }
+    }
+
+    return new Uint8Array(out);
+}
+
+
+// ==================
+// Assembler
+// ==================
+const ASM = `
+; RAM variable countdown
+; varAddr = 0x80
+
+    LDA_IMM 5
+    STA_MEM 0x80
+
+loop:
+    LDA_MEM 0x80
+    PRINTA
+    DEC_A
+    STA_MEM 0x80
+    JZ end
+    JMP loop
+
+end:
+    LDA_MEM 0x80
+    PRINTA
+    HALT
+`;
+
+const PROGRAM = assemble(ASM);
+
+
 
 class CPU {
     constructor(memorySize = 256) {
