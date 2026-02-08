@@ -59,23 +59,26 @@ function assemble(asm) {
     const labels = new Map();
     let pc = 0;
 
-    for (const raw of lines) {
-        const line = raw.trim();
-        if (!line || line.startsWith(";")) continue;
+    for (let lineNo = 0; lineNo < lines.length; lineNo++) {
+        const raw = lines[lineNo].trim();
+        if (!raw || raw.startsWith(";")) continue;
         
         // label:
-        if (/^[A-Za-z_]\w*:\s*$/.test(line)) {
-            const label = line.slice(0, -1);
+        if (/^[A-Za-z_]\w*:\s*$/.test(raw)) {
+            const label = raw.slice(0, -1);
+            if (labels.has(label)) {
+                throw new Error(`Duplicate label "${label}" at line ${lineNo + 1}`)
+            }
             labels.set(label, pc & 0xFF);
             continue;
         }
 
-        const t = tokenize(line);
+        const t = tokenize(raw);
         if (t.length === 0) continue;
 
         const op = t[0].toUpperCase();
         const size = INSTR_SIZE[op];
-        if (!size) throw new Error(`Unknown instruction: ${op}`);
+        if (!size) throw new Error(`Unknown instruction: "${op}" at line ${lineNo + 1}`);
 
         pc += size;
     }
@@ -84,19 +87,19 @@ function assemble(asm) {
     const out = [];
     pc = 0;
 
-    for (const raw of lines) {
-        const line = raw.trim();
-        if (!line || line.startsWith(";")) continue;
+    for (let lineNo = 0; lineNo < lines.length; lineNo++) {
+        const raw = lines[lineNo].trim();
+        if (!raw || raw.startsWith(";")) continue;
 
         // label:
-        if (/^[A-Za-z_]\w*:\s*$/.test(line)) continue;
+        if (/^[A-Za-z_]\w*:\s*$/.test(raw)) continue;
 
-        const t = tokenize(line);
+        const t = tokenize(raw);
         if (t.length === 0) continue;
 
         const opName =t[0].toUpperCase();
         const opcode = OP[opName];
-        if (opcode === undefined) throw new Error(`Unknown opcode: ${opName}`);
+        if (opcode === undefined) throw new Error(`Unknown opcode: "${opName}" at line ${lineNo + 1}`);
 
         out.push(opcode);
         pc++;
@@ -104,14 +107,14 @@ function assemble(asm) {
         const size = INSTR_SIZE[opName];
 
         if (size === 2) {
-            if (t.length < 2) throw new Error(`Missing operand for ${opName}`);
+            if (t.length < 2) throw new Error(`Missing operand for "${opName}" at line ${lineNo + 1}`);
 
             const operandToken = t[1];
             let val = parseNumber(operandToken);
 
             if (val === null) {
                 if (!labels.has(operandToken)) {
-                    throw new Error(`Unknown label: ${operandToken}`);
+                    throw new Error(`Unknown label: "${operandToken}" at line ${lineNo + 1}`);
                 }
                 val = labels.get(operandToken);
             }
@@ -126,33 +129,8 @@ function assemble(asm) {
 
 
 // ==================
-// Assembler
+// CPU
 // ==================
-const ASM = `
-; RAM variable countdown
-; varAddr = 0x80
-
-    LDA_IMM 5
-    STA_MEM 0x80
-
-loop:
-    LDA_MEM 0x80
-    PRINTA
-    DEC_A
-    STA_MEM 0x80
-    JZ end
-    JMP loop
-
-end:
-    LDA_MEM 0x80
-    PRINTA
-    HALT
-`;
-
-const PROGRAM = assemble(ASM);
-
-
-
 class CPU {
     constructor(memorySize = 256) {
         this.mem = new Uint8Array(memorySize);
@@ -259,6 +237,10 @@ const elZ = document.getElementById("z");
 const elROM = document.getElementById("rom");
 const elOut = document.getElementById("out");
 
+const elAsm = document.getElementById("asm");
+const elAsmErr = document.getElementById("asmErr");
+
+const btnAssemble = document.getElementById("assembleBtn")
 const btnStep = document.getElementById("step");
 const btnRun = document.getElementById("run");
 const btnStop = document.getElementById("stop");
@@ -266,9 +248,56 @@ const btnReset = document.getElementById("reset");
 
 const cpu = new CPU();
 
-// サンプルプログラムの実行
-cpu.load(PROGRAM);
+let PROGRAM = new Uint8Array([]);
 
+const DEFAULT_ASM = `
+; RAM variable countdown
+; var Addr = 0x80
+
+    LDA_IMM 5
+    STA_MEM 0x80
+
+loop:
+    LDA_MEM 0x80
+    PRINTA
+    DEC_A
+    STA_MEM 0x80
+    JZ end
+    JMP loop
+
+end:
+    LDA_MEM 0x80
+    PRINTA
+    HALT
+`.trim();
+
+
+elAsm.value = DEFAULT_ASM;
+
+function stopRunIfNeeded() {
+    if (timer) {
+        clearInterval(timer);
+        timer = null;
+    }
+    btnRun.disabled = false;
+    btnStop.disabled = true;
+}
+
+function doAssemble() {
+    stopRunIfNeeded();
+
+    try {
+        PROGRAM = assemble(elAsm.value);
+        elAsmErr.textContent = "";
+
+        cpu.reset();
+        cpu.load(PROGRAM);
+
+        render();
+    } catch (e) {
+        elAsmErr.textContent = String(e.message || e);
+    }
+}
 
 
 // ==================
@@ -281,7 +310,7 @@ function renderROM() {
         const byte = `${hex2(i)}: ${hex2(cpu.mem[i])}`;
         s += (i === cpu.pc ? `<span class="line-hi">${byte}</span>` : byte) + "\n";
     }
-    elROM.innerHTML = s;
+    elROM.innerHTML = s || "(empty)";
 }
 
 function render() {
@@ -289,8 +318,10 @@ function render() {
     elA.textContent = `$${hex2(cpu.a)} (${cpu.a})`;
     elB.textContent = `$${hex2(cpu.b)} (${cpu.b})`;
     elZ.textContent = `${cpu.z}`;
+
     renderROM();
     const lines = cpu.output.slice(-50);
+
     elOut.textContent = lines.join("\n") + (cpu.halted ? "\n\n(HALTED)" : "");
 }
 
@@ -299,6 +330,8 @@ function render() {
 // Controls
 // ==================
 let timer = null;
+
+btnAssemble.addEventListener("click", doAssemble);
 
 btnStep.addEventListener("click", () => {
     cpu.step();
@@ -319,34 +352,21 @@ btnRun.addEventListener("click", () => {
         render();
 
         if (cpu.halted) {
-            clearInterval(timer);
-            timer = null;
-            btnRun.disabled = false;
-            btnStop.disabled = true;
+            stopRunIfNeeded();
         }
     }, 50);
 });
 
 btnStop.addEventListener("click", () => {
-    if (timer) {
-        clearInterval(timer);
-        timer = null;
-    }
-    btnRun.disabled = false;
-    btnStop.disabled = true;
+    stopRunIfNeeded();
     render();
 });
 
 btnReset.addEventListener("click", () => {
-    if (timer) {
-        clearInterval(timer);
-        timer = null;
-    }
+    stopRunIfNeeded();
     cpu.reset();
     cpu.load(PROGRAM);
-    btnRun.disabled = false;
-    btnStop.disabled = true;
     render();
 });
 
-render();
+doAssemble();
