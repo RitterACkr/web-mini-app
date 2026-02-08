@@ -10,6 +10,7 @@
     <header class="bar">
         <div class="title">cpu_emulator</div>
         <div class="controls">
+            <button id="assembleBtn">Assemble</button>
             <button id="step">Step</button>
             <button id="run">Run</button>
             <button id="stop" disabled>Stop</button>
@@ -19,6 +20,10 @@
 
     <main class="main">
         <section class="panel">
+            <h2>ASM</h2>
+            <textarea id="asm" spellcheck="false"></textarea>
+            <pre id="asmErr"></pre>
+
             <h2>Registers</h2>
             <div class="grid">
                 <div><span>PC</span><code id="pc"></code></div>
@@ -27,9 +32,9 @@
                 <div><span>Z</span><code id="z"></code></div>
             </div>
 
-            <h2>ROM</h2>
+            <h2>ROM (bytes)</h2>
             <pre id="rom"></pre>
-            <div class="hint">黄色行が現在のPC / 出力は右</div>
+            <div class="hint">黄色行が現在のPC / Assembleで反映</div>
         </section>
 
         <section class="panel">
