@@ -7,8 +7,13 @@ const OP = {
     ADD:     0x03,  // A = (A+B)&0xFF, Z set
     PRINTA:  0x04,  // print A
     DEC_A:   0x05,  // A = (A-1)&0xFF, Z set
+
     JMP:     0x10,  // PC = addr
     JZ:      0x11,  // if Z==1: PC = addr
+
+    LDA_MEM: 0x20,  // A = mem[addr], Z set
+    STA_MEM: 0x21,  // mem[addr] = A
+
     HALT:    0xFF
 };
 
@@ -17,14 +22,24 @@ function hex2(n) {
 }
 
 // サンプルプログラム
+// - RAMの導入
+const VAR_ADDR = 0x80;  // 80
+
 // print Aの無限ループ (STOPで止める)
 const PROGRAM = new Uint8Array([
-    OP.LDA_IMM, 5,  // 00 01
-    OP.PRINTA,      // 02
-    OP.DEC_A,       // 03
-    OP.JZ, 0x08,    // 04 05
-    OP.JMP, 0x02,   // 06 07
-    OP.HALT         // 08
+    OP.LDA_IMM, 5,          // 00 01
+    OP.STA_MEM, VAR_ADDR,   // 02 03
+
+    OP.LDA_MEM, VAR_ADDR,   // 04 05
+    OP.PRINTA,              // 06
+    OP.DEC_A,               // 07
+    OP.STA_MEM, VAR_ADDR,   // 08 09
+    OP.JZ, 0x0E,            // 0A 0B
+    OP.JMP, 0x04,           // 0C 0D
+
+    OP.LDA_MEM, VAR_ADDR,   // 0E 0F
+    OP.PRINTA,              // 10
+    OP.HALT                 // 11
 ]);
 
 class CPU {
@@ -89,6 +104,17 @@ class CPU {
             case OP.DEC_A: {
                 this.a = (this.a - 1) & 0xFF;
                 this.z = (this.a === 0) ? 1 : 0;
+                break;
+            }
+            case OP.LDA_MEM: {
+                const addr = this.fetch();
+                this.a = this.mem[addr & 0xFF];
+                this.z = (this.a === 0) ? 1 : 0;
+                break;
+            }
+            case OP.STA_MEM: {
+                const addr = this.fetch();
+                this.mem[addr & 0xFF] = this.a & 0xFF;
                 break;
             }
             case OP.JMP: {
