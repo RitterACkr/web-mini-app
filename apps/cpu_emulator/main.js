@@ -236,6 +236,7 @@ const elB = document.getElementById("b");
 const elZ = document.getElementById("z");
 const elROM = document.getElementById("rom");
 const elOut = document.getElementById("out");
+const elMem = document.getElementById("#mem");
 
 const elAsm = document.getElementById("asm");
 const elAsmErr = document.getElementById("asmErr");
@@ -313,6 +314,23 @@ function renderROM() {
     elROM.innerHTML = s || "(empty)";
 }
 
+function renderMemory() {
+    // mem: Uint8Array(256), pc: 0..255
+    const line = [];
+    for (let base = 0; base < 256; base += 16) {
+        const bytes = [];
+        for (let i = 0; i < 16; i++) {
+            const addr = base + i;
+            const b = mem[addr];
+            bytes.push(hex2(b));
+        }
+        const inLine = (pc >= base && pc < base + 16);
+        const prefix = inLine ? "▶ " : "  ";
+        lines.push(`${prefix}${hex(base)}: ${bytes.join(" ")}`);
+    }
+    return lines.join("\n");
+}
+
 function render() {
     elPC.textContent = `$${hex2(cpu.pc)} (${cpu.pc})`;
     elA.textContent = `$${hex2(cpu.a)} (${cpu.a})`;
@@ -323,6 +341,8 @@ function render() {
     const lines = cpu.output.slice(-50);
 
     elOut.textContent = lines.join("\n") + (cpu.halted ? "\n\n(HALTED)" : "");
+
+    elMem.textContent = renderMemory(cpu.mem, cpu.PC);
 }
 
 
