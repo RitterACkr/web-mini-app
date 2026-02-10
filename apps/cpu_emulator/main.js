@@ -358,8 +358,10 @@ const cpu = new CPU();
 let PROGRAM = new Uint8Array([]);
 
 const DEFAULT_ASM = `
-; RAM variable countdown
-; var Addr = 0x80
+; countdown stored in RAM[0x80]
+; - load initial value
+; - loop: print, compare, decrement, store
+; - exit when value becomes 0
 
     LDA_IMM 5
     STA_MEM 0x80
@@ -367,14 +369,20 @@ const DEFAULT_ASM = `
 loop:
     LDA_MEM 0x80
     PRINTA
-    DEC_A
-    STA_MEM 0x80
+
+    ; if A == 0 -> end
+    CMP_A_IMM 0
     JZ end
-    JMP loop
+
+    ; A = A - 1
+    SUB_A_IMM 1
+    STA_MEM 0x80
+
+    ; continue loop while A != 0
+    CMP_A_IMM 0
+    JNZ loop
 
 end:
-    LDA_MEM 0x80
-    PRINTA
     HALT
 `.trim();
 
