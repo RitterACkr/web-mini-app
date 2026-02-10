@@ -160,6 +160,7 @@ class CPU {
     }
 
     load(program, startAddr = 0x00) {
+        this.reset();
         for (let i = 0; i < program.length; i++) {
             this.mem[(startAddr + i) & 0xFF] = program[i] & 0xFF;
         }
@@ -293,6 +294,11 @@ const elTrace = document.getElementById("trace");
 const elAsm = document.getElementById("asm");
 const elAsmErr = document.getElementById("asmErr");
 
+const elBpInput = document.getElementById("bpInput");
+const btnBpClear = document.getElementById("bpClear");
+const elBpView = document.getElementById("bpView");
+let breakAddr = null;
+
 const btnAssemble = document.getElementById("assembleBtn")
 const btnStep = document.getElementById("step");
 const btnRun = document.getElementById("run");
@@ -343,13 +349,19 @@ function doAssemble() {
         PROGRAM = assemble(elAsm.value);
         elAsmErr.textContent = "";
 
-        cpu.reset();
         cpu.load(PROGRAM);
 
         render();
     } catch (e) {
         elAsmErr.textContent = String(e.message || e);
     }
+}
+
+function parseAddr(s) {
+    const t = (s ?? "").trim();
+    if (!t) return null;
+    const n = t.startsWith("0x") ? parseInt(t, 16) : parseInt(t, 10);
+    return Number.isFinite(n) ? (n & 0xFF) : null;
 }
 
 
@@ -389,6 +401,10 @@ function renderMemory(mem, pc, lastWrite) {
     return lines.join("\n");
 }
 
+function renderBp() {
+    elBpView.textContent = breakAddr === null ? "(none)" : `$${hex2(breakAddr)} (${breakAddr})`;
+}
+
 function render() {
     elPC.textContent = `$${hex2(cpu.pc)} (${cpu.pc})`;
     elA.textContent = `$${hex2(cpu.a)} (${cpu.a})`;
@@ -403,6 +419,7 @@ function render() {
     elMem.innerHTML = renderMemory(cpu.mem, cpu.pc, cpu.lastWrite);
 
     elTrace.textContent = cpu.trace.slice(-80).join("\n");
+    elTrace.scrollTop = elTrace.scrollHeight;
 }
 
 
@@ -410,6 +427,20 @@ function render() {
 // Controls
 // ==================
 let timer = null;
+
+elBpInput.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+
+    const v = parseAddr(elBpInput.value);
+    breakAddr = v;
+    renderBp();
+})
+
+btnBpClear.addEventListener("click", () => {
+    breakAddr = null;
+    elBpInput.value = "";
+    renderBp();
+})
 
 btnAssemble.addEventListener("click", doAssemble);
 
@@ -424,8 +455,16 @@ btnRun.addEventListener("click", () => {
     btnStop.disabled = false;
 
     timer = setInterval(() => {
-        // 少しずつ進める
         for (let i = 0; i < 5; i++) {
+
+            // -- BREAK POINT CHECK --
+            if (breakAddr !== null && cpu.pc === breakAddr) {
+                cpu.trace.push(`[BREAK] PC=${hex2(cpu.pc)}`);
+                stopRunIfNeeded();
+                render();
+                return;
+            }
+
             cpu.step();
             if (cpu.halted) break;
         }
@@ -444,9 +483,9 @@ btnStop.addEventListener("click", () => {
 
 btnReset.addEventListener("click", () => {
     stopRunIfNeeded();
-    cpu.reset();
     cpu.load(PROGRAM);
     render();
 });
 
 doAssemble();
+renderBp();

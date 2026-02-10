@@ -9,6 +9,14 @@
 <body>
     <header class="bar">
         <div class="title">cpu_emulator</div>
+
+        <div class="row">
+            <label>BP</label>
+            <input id="bpInput" placeholder="0x10 or 16" />
+            <button id="bpClear">Clear</button>
+            <span id="bpView">(none)</span>
+        </div>
+
         <div class="controls">
             <button id="assembleBtn">Assemble</button>
             <button id="step">Step</button>
