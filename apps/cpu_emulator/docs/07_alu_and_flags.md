@@ -50,3 +50,14 @@ HALT
 
 5 -> 4 -> 3 -> 2 -> 1 -> 0 と出力して停止する
 ```
+
+### 比較と分岐の組み合わせ
+
+以下のように `CMP` / `JZ` / `JNZ` を組み合わせると if / while に相当する制御機構を表現可能
+```
+loop:
+  CMP_A_IMM 0
+  JZ end      <- if (A == 0) break
+  SUB_A_IMM 1
+  JNZ loop    <- while (A != 0)
+```
