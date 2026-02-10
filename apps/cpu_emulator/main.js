@@ -281,24 +281,41 @@ class CPU {
 // ==================
 // UI
 // ==================
+
+// --- Register ---
 const elPC = document.getElementById("pc");
 const elA = document.getElementById("a");
 const elB = document.getElementById("b");
 const elZ = document.getElementById("z");
+
+// --- ROM (bytes) ---
 const elROM = document.getElementById("rom");
 
+// --- Output ---
 const elOut = document.getElementById("out");
+
+// --- Memory (00-FF) ---
 const elMem = document.getElementById("mem");
+
+// --- Trace ---
 const elTrace = document.getElementById("trace");
 
+// --- ASM ---
 const elAsm = document.getElementById("asm");
 const elAsmErr = document.getElementById("asmErr");
 
+// --- Break Point ---
 const elBpInput = document.getElementById("bpInput");
 const btnBpClear = document.getElementById("bpClear");
 const elBpView = document.getElementById("bpView");
 let breakAddr = null;
 
+// --- Speed ---
+const elSpeed = document.getElementById("speed");
+const elSpeedLabel = document.getElementById("speedLabel");
+let runIntervalMs = 50;
+
+// --- Control Button ---
 const btnAssemble = document.getElementById("assembleBtn")
 const btnStep = document.getElementById("step");
 const btnRun = document.getElementById("run");
@@ -405,6 +422,11 @@ function renderBp() {
     elBpView.textContent = breakAddr === null ? "(none)" : `$${hex2(breakAddr)} (${breakAddr})`;
 }
 
+function renderSpeed() {
+    if (!elSpeed || !elSpeedLabel) return;
+    elSpeedLabel.textContent = `${runIntervalMs}ms`;
+}
+
 function render() {
     elPC.textContent = `$${hex2(cpu.pc)} (${cpu.pc})`;
     elA.textContent = `$${hex2(cpu.a)} (${cpu.a})`;
@@ -427,6 +449,27 @@ function render() {
 // Controls
 // ==================
 let timer = null;
+
+function runLoop() {
+    for (let i = 0; i < 5; i++) {
+
+        // -- BREAK POINT CHECK --
+        if (breakAddr !== null && cpu.pc === breakAddr) {
+            cpu.trace.push(`[BREAK] PC=${hex2(cpu.pc)}`);
+            stopRunIfNeeded();
+            render();
+            return;
+        }
+
+        cpu.step();
+        if (cpu.halted) break;
+    }
+    render();
+
+    if (cpu.halted) {
+        stopRunIfNeeded();
+    }
+}
 
 elBpInput.addEventListener("keydown", (e) => {
     if (e.key !== "Enter") return;
@@ -454,26 +497,7 @@ btnRun.addEventListener("click", () => {
     btnRun.disabled = true;
     btnStop.disabled = false;
 
-    timer = setInterval(() => {
-        for (let i = 0; i < 5; i++) {
-
-            // -- BREAK POINT CHECK --
-            if (breakAddr !== null && cpu.pc === breakAddr) {
-                cpu.trace.push(`[BREAK] PC=${hex2(cpu.pc)}`);
-                stopRunIfNeeded();
-                render();
-                return;
-            }
-
-            cpu.step();
-            if (cpu.halted) break;
-        }
-        render();
-
-        if (cpu.halted) {
-            stopRunIfNeeded();
-        }
-    }, 50);
+    timer = setInterval(runLoop, runIntervalMs);
 });
 
 btnStop.addEventListener("click", () => {
@@ -487,5 +511,23 @@ btnReset.addEventListener("click", () => {
     render();
 });
 
+function restartTimerIfRunning() {
+    if (!timer) return;
+    clearInterval(timer);
+    timer = setInterval(runLoop, runIntervalMs);
+}
+
+if (elSpeed) {
+    runIntervalMs = Number(elSpeed.value);
+    renderSpeed();
+
+    elSpeed.addEventListener("input", () => {
+        runIntervalMs = Number(elSpeed.value);
+        renderSpeed();
+        restartTimerIfRunning();
+    });
+}
+
 doAssemble();
 renderBp();
+renderSpeed();
