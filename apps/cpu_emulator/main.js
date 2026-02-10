@@ -12,6 +12,7 @@ const OP = {
 
     JMP:        0x10,   // PC = addr
     JZ:         0x11,   // if Z==1: PC = addr
+    JNZ:        0x12,   // if Z==0: PC = addr
 
     LDA_MEM:    0x20,   // A = mem[addr], Z set
     STA_MEM:    0x21,   // mem[addr] = A
@@ -40,6 +41,7 @@ const INSTR_SIZE = {
     STA_MEM:    2,
     JMP:        2,
     JZ:         2,
+    JNZ:        2,
     HALT:       1
 };
 
@@ -267,6 +269,15 @@ class CPU {
                 operand = addr & 0xFF;
 
                 if (this.z === 1) {
+                    this.pc = addr & 0xFF;
+                }
+                break;
+            }
+            case OP.JNZ: {
+                const addr = this.fetch();
+                operand = addr & 0xFF;
+
+                if (this.z === 0) {
                     this.pc = addr & 0xFF;
                 }
                 break;

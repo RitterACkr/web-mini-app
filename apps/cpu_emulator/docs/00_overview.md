@@ -23,13 +23,15 @@ JS による最小CPUエミュレータの実装
 - ROM (Program)
 
 ### 命令
-- LDA_IMM
-- LDB_IMM
-- ADD
+- LDA_IMM / LDB_IMM
+- ADD / DEC_A
+- JMP / JZ
+- LDA_MEM / STA_MEM
 - PRINTA
-- JMP
-- JZ
 - HALT
+- CMP_A_IMM
+- SUB_A_IMM
+- JNZ
 
 ### 実行
 1. PCの位置から命令を読む
