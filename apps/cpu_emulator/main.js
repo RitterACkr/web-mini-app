@@ -17,6 +17,8 @@ const OP = {
     HALT:    0xFF
 };
 
+const OP_NAME = Object.fromEntries(Object.entries(OP).map(([k, v]) => [v, k]));
+
 function hex2(n) {
     return n.toString(16).toUpperCase().padStart(2, "0");
 }
@@ -138,6 +140,8 @@ class CPU {
     }
 
     reset() {
+        this.mem.fill(0);
+
         // registers
         this.pc = 0;
         this.a = 0;
@@ -150,6 +154,9 @@ class CPU {
 
         // latest write
         this.lastWrite = null;
+
+        // trace log
+        this.trace = [];
     }
 
     load(program, startAddr = 0x00) {
@@ -169,17 +176,28 @@ class CPU {
     step() {
         if (this.halted) return;
 
+        // --  trace: before --
+        const pc0 = this.pc & 0xFF;
+        const a0 = this.a & 0xFF;
+        const b0 = this.b & 0xFF;
+        const z0 = this.z & 0xFF;
+        let operand = null;
+
         const op = this.fetch();
 
         switch(op) {
             case OP.LDA_IMM: {
                 const imm = this.fetch();
+                operand = imm & 0xFF;
+
                 this.a = imm & 0xFF;
                 this.z = (this.a === 0) ? 1 : 0;
                 break;
             }
             case OP.LDB_IMM: {
                 const imm = this.fetch();
+                operand = imm & 0xFF;
+
                 this.b = imm & 0xFF;
                 this.z = (this.b === 0) ? 1 : 0;
                 break;
@@ -200,12 +218,16 @@ class CPU {
             }
             case OP.LDA_MEM: {
                 const addr = this.fetch();
+                operand = addr & 0xFF;
+
                 this.a = this.mem[addr & 0xFF];
                 this.z = (this.a === 0) ? 1 : 0;
                 break;
             }
             case OP.STA_MEM: {
                 const addr = this.fetch();
+                operand = addr & 0xFF;
+
                 const a = addr & 0xFF;
                 this.mem[a] = this.a & 0xFF;
 
@@ -214,11 +236,15 @@ class CPU {
             }
             case OP.JMP: {
                 const addr = this.fetch();
+                operand = addr & 0xFF;
+
                 this.pc = addr & 0xFF;
                 break;
             }
             case OP.JZ: {
                 const addr = this.fetch();
+                operand = addr & 0xFF;
+
                 if (this.z === 1) {
                     this.pc = addr & 0xFF;
                 }
@@ -229,6 +255,24 @@ class CPU {
                 this.halted = true;
                 break;
         }
+
+        // -- trace: after --
+        const a1 = this.a & 0xFF;
+        const b1 = this.b & 0xFF;
+        const z1 = this.z & 0xFF;
+        const pc1 = this.pc & 0xFF;
+
+        const name = OP_NAME[op] ?? `OP_${hex2(op)}`;
+        const opStr = (operand === null) ? name : `${name} ${hex2(operand)}`;
+
+        const dA = (a0 !== a1) ? `${hex2(a0)}→${hex2(a1)}` : `${hex2(a1)}`;
+        const dB = (b0 !== b1) ? `${hex2(b0)}→${hex2(b1)}` : `${hex2(b1)}`;
+        const dZ = (z0 !== z1) ? `${z0}→${z1}` : `${z1}`;
+
+        const line = `PC=${hex2(pc0)}  ${opStr.padEnd(14)} | A=${dA} B=${dB} Z=${dZ} -> PC=${hex2(pc1)}${this.halted ? " (HALT)" : ""}`;
+
+        this.trace.push(line);
+        if (this.trace.length > 200) this.trace.shift();
     }
 }
 
@@ -241,8 +285,10 @@ const elA = document.getElementById("a");
 const elB = document.getElementById("b");
 const elZ = document.getElementById("z");
 const elROM = document.getElementById("rom");
+
 const elOut = document.getElementById("out");
 const elMem = document.getElementById("mem");
+const elTrace = document.getElementById("trace");
 
 const elAsm = document.getElementById("asm");
 const elAsmErr = document.getElementById("asmErr");
@@ -355,6 +401,8 @@ function render() {
     elOut.textContent = lines.join("\n") + (cpu.halted ? "\n\n(HALTED)" : "");
 
     elMem.innerHTML = renderMemory(cpu.mem, cpu.pc, cpu.lastWrite);
+
+    elTrace.textContent = cpu.trace.slice(-80).join("\n");
 }
 
 
