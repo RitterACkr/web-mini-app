@@ -8,6 +8,7 @@ const OP = {
     PRINTA:     0x04,   // print A
     DEC_A:      0x05,   // A = (A-1)&0xFF, Z set
     CMP_A_IMM:  0x06,   // Z = (A-imm==0) ? 1 : 0, Aは変更なし
+    SUB_A_IMM:  0x07,   // A = (A-imm)&0xFF, Z set
 
     JMP:        0x10,   // PC = addr
     JZ:         0x11,   // if Z==1: PC = addr
@@ -34,6 +35,7 @@ const INSTR_SIZE = {
     PRINTA:     1,
     DEC_A:      1,
     CMP_A_IMM:  2,
+    SUB_A_IMM:  2,
     LDA_MEM:    2,
     STA_MEM:    2,
     JMP:        2,
@@ -225,6 +227,14 @@ class CPU {
 
                 const r = ((this.a & 0xFF) - (imm & 0xFF)) & 0xFF;
                 this.z = (r === 0) ? 1 : 0;
+                break;
+            }
+            case OP.SUB_A_IMM: {
+                const imm = this.fetch();
+                operand = imm & 0xFF;
+
+                this.a = ((this.a & 0xFF) - (imm & 0xFF)) & 0xFF;
+                this.z = (this.a === 0) ? 1 : 0;
                 break;
             }
             case OP.LDA_MEM: {
