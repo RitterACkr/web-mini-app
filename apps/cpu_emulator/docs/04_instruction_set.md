@@ -178,15 +178,45 @@ CPUを停止する
 ---
 
 ## 実際のプログラム例
-「5 + 7を計算して出力するプログラム」
-```css
-[LDA_IMM][5]
-[LDB_IMM][7]
-[ADD]
-[PRINTA]
-[HALT]
+
+### 「5 + 7を計算して出力するプログラム」
+```
+LDA_IMM 5
+LDB_IMM 7
+ADD
+PRINTA
+HALT
 ```
 バイト列 (16進):
 ```
 01 05  02 07  03  04  FF
 ```
+
+### 「RAM を使ったカウントダウン」
+```
+; RAM[0x80]にカウント値を保存しながら減算する
+; 5 -> 4 -> 3 -> 2 -> 1 -> 0 を出力して停止
+
+LDA_IMM 5
+STA_MEM 0x80
+loop:
+    LDA_MEM 0x80
+    PRINTA
+
+    CMP_A_IMM 0
+    JZ end
+
+    SUB_A_IMM 1
+    STA_MEM 0x80
+
+    CMP_A_IMM 0
+    JNZ loop
+
+end:
+    HALT
+```
+- 即値ロード (LDA_IMM)
+- メモリ読み書き (LDA_MEM / STA_MEM)
+- 比較 (CMP_A_IMM)
+- 減算 (SUB_A_IMM)
+- 条件分岐 (JZ / JNZ)
