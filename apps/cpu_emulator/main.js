@@ -153,6 +153,7 @@ class CPU {
         this.a = 0;
         this.b = 0;
         this.z = 0;
+        this.sp = 0xFF;
 
         // state
         this.halted = false;
@@ -188,6 +189,7 @@ class CPU {
         const a0 = this.a & 0xFF;
         const b0 = this.b & 0xFF;
         const z0 = this.z & 0xFF;
+        const sp0 = this.sp & 0xFF;
         let operand = null;
 
         const op = this.fetch();
@@ -293,6 +295,7 @@ class CPU {
         const b1 = this.b & 0xFF;
         const z1 = this.z & 0xFF;
         const pc1 = this.pc & 0xFF;
+        const sp1 = this.sp & 0xFF;
 
         const name = OP_NAME[op] ?? `OP_${hex2(op)}`;
         const opStr = (operand === null) ? name : `${name} ${hex2(operand)}`;
@@ -300,8 +303,9 @@ class CPU {
         const dA = (a0 !== a1) ? `${hex2(a0)}→${hex2(a1)}` : `${hex2(a1)}`;
         const dB = (b0 !== b1) ? `${hex2(b0)}→${hex2(b1)}` : `${hex2(b1)}`;
         const dZ = (z0 !== z1) ? `${z0}→${z1}` : `${z1}`;
+        const dSP = (sp0 !== sp1) ? `${hex2(sp0)}→${hex2(sp1)}` : `${hex2(sp1)}`;
 
-        const line = `PC=${hex2(pc0)}  ${opStr.padEnd(14)} | A=${dA} B=${dB} Z=${dZ} -> PC=${hex2(pc1)}${this.halted ? " (HALT)" : ""}`;
+        const line = `PC=${hex2(pc0)}  ${opStr.padEnd(14)} | A=${dA} B=${dB} Z=${dZ} SP=${dSP} -> PC=${hex2(pc1)}${this.halted ? " (HALT)" : ""}`;
 
         this.trace.push(line);
         if (this.trace.length > 200) this.trace.shift();
@@ -318,6 +322,7 @@ const elPC = document.getElementById("pc");
 const elA = document.getElementById("a");
 const elB = document.getElementById("b");
 const elZ = document.getElementById("z");
+const elSP = document.getElementById("sp");
 
 // --- ROM (bytes) ---
 const elROM = document.getElementById("rom");
@@ -471,6 +476,7 @@ function render() {
     elA.textContent = `$${hex2(cpu.a)} (${cpu.a})`;
     elB.textContent = `$${hex2(cpu.b)} (${cpu.b})`;
     elZ.textContent = `${cpu.z}`;
+    elSP.textContent = `$${hex2(cpu.sp)} (${cpu.sp})`;
 
     renderROM();
     const lines = cpu.output.slice(-50);
