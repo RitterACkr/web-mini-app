@@ -1,3 +1,6 @@
+/* =========================================================
+   Theme / Variables
+========================================================= */
 :root {
     --bg: #000;
     --fg: #00ff66;
@@ -6,6 +9,9 @@
     --hi: #ffe66d;
 }
 
+/* =========================================================
+   Base / Reset
+========================================================= */
 * {
     box-sizing: border-box;
 }
@@ -23,6 +29,9 @@ body {
     grid-template-rows: auto 1fr;
 }
 
+/* =========================================================
+   Top Bar / Controls (header)
+========================================================= */
 .bar {
     display: flex;
     align-items: center;
@@ -40,6 +49,7 @@ body {
     gap: 8px;
 }
 
+/* Buttons (global) */
 button {
     background: transparent;
     color: var(--fg);
@@ -56,6 +66,9 @@ button:disabled {
     cursor: not-allowed;
 }
 
+/* =========================================================
+   Layout / Panels
+========================================================= */
 .main {
     display: grid;
     grid-template-columns: 1.2fr 1fr;
@@ -71,6 +84,7 @@ button:disabled {
     overflow: hidden;
 }
 
+/* Section titles */
 h2 {
     margin: 0 0 8px 0;
     font-size: 13px;
@@ -78,6 +92,9 @@ h2 {
     font-weight: 700;
 }
 
+/* =========================================================
+   Register Grid
+========================================================= */
 .grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -99,6 +116,9 @@ h2 {
     font-size: 14px;
 }
 
+/* =========================================================
+   Code / Text Blocks
+========================================================= */
 pre {
     margin: 0;
     white-space: pre;
@@ -116,6 +136,9 @@ pre {
     color: var(--hi);
 }
 
+/* =========================================================
+   Assembler Textarea / Error
+========================================================= */
 textarea {
     width: 100%;
     height: 220px;
@@ -144,7 +167,9 @@ textarea:focus {
     max-height: 90px;
 }
 
-/* memory view */
+/* =========================================================
+   Memory View
+========================================================= */
 .mem {
     max-height: 260px;
     overflow: auto;
@@ -169,6 +194,8 @@ textarea:focus {
     padding: 1px 2px;
     border-radius: 6px;
 }
+
+/* Memory highlights */
 #mem .hi-pc {
     outline: 1px solid rgba(255,213,74,0.55);
     background: rgba(255,213,74,0.15);
@@ -178,7 +205,9 @@ textarea:focus {
     background: rgba(90,169,255,0.15);
 }
 
-/* trace view*/
+/* =========================================================
+   Trace View
+========================================================= */
 #trace {
     max-height: 240;
     overflow: auto;
@@ -186,4 +215,96 @@ textarea:focus {
     white-space: pre-wrap;
     word-break: break-all;
     line-height: 1.35;
+}
+
+/* =========================================================
+   Inline Control Rows (BP / Speed etc.)
+========================================================= */
+.row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+}
+
+.row label {
+    width: 60px;
+    opacity: 0.9;
+    font-size: 12px;
+}
+
+/* Input / button unified styling in rows */
+.row input,
+.row button {
+    font: inherit;
+    font-size: 12px;
+    line-height: 1;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.06);
+    color: inherit;
+}
+.row button {
+    cursor: pointer;
+}
+
+/* Range slider layout (container part) */
+.row input[type="range"] {
+    padding: 0;
+    height: 24px;
+    width: 160px;
+    background: transparent;
+    border: none;
+}
+
+/* Speed label */
+#speedLabel {
+    min-width: 48px;
+    text-align: right;
+    font-size: 12px;
+    opacity: 0.85;
+}
+
+/* =========================================================
+   Range Slider Skin
+   - WebKit (Chrome / Edge) + Firefox
+========================================================= */
+
+/* --- WebKit track/thumb --- */
+input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ddd;
+  border: 1px solid #444;
+  cursor: pointer;
+  margin-top: -5px;
+}
+input[type="range"]::-webkit-slider-runnable-track{
+  height: 6px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 999px;
+}
+input[type="range"]:hover::-webkit-slider-thumb{
+  background: #fff;
+}
+input[type="range"]:active::-webkit-slider-thumb{
+  transform: scale(1.1);
+}
+
+/* --- Firefox track/thumb --- */
+input[type="range"]::-moz-range-thumb{
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ddd;
+  border: 1px solid #444;
+  cursor: pointer;
+}
+input[type="range"]::-moz-range-track{
+  height: 6px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 999px;
 }
