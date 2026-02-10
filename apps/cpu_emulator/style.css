@@ -144,6 +144,7 @@ textarea:focus {
     max-height: 90px;
 }
 
+/* memory view */
 .mem {
     max-height: 260px;
     overflow: auto;
@@ -151,4 +152,28 @@ textarea:focus {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     font-size: 12px;
     line-height: 1.35;
+}
+
+/* memory view cells */
+#mem {
+    white-space: pre;
+}
+#mem .addr {
+    color: #9aa7b5;
+    font-weight: 700;
+}
+#mem .cell {
+    display: inline-block;
+    width: 2.2em;
+    text-align: center;
+    padding: 1px 2px;
+    border-radius: 6px;
+}
+#mem .hi-pc {
+    outline: 1px solid rgba(255,213,74,0.55);
+    background: rgba(255,213,74,0.15);
+}
+#mem .hi-write {
+    outline: 1px solid rgba(90,169,255,0.55);
+    background: rgba(90,169,255,0.15);
 }

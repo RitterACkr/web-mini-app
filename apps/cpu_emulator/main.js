@@ -147,6 +147,9 @@ class CPU {
         // state
         this.halted = false;
         this.output = [];
+
+        // latest write
+        this.lastWrite = null;
     }
 
     load(program, startAddr = 0x00) {
@@ -203,7 +206,10 @@ class CPU {
             }
             case OP.STA_MEM: {
                 const addr = this.fetch();
-                this.mem[addr & 0xFF] = this.a & 0xFF;
+                const a = addr & 0xFF;
+                this.mem[a] = this.a & 0xFF;
+
+                this.lastWrite = a;
                 break;
             }
             case OP.JMP: {
@@ -314,19 +320,25 @@ function renderROM() {
     elROM.innerHTML = s || "(empty)";
 }
 
-function renderMemory() {
+function renderMemory(mem, pc, lastWrite) {
     // mem: Uint8Array(256), pc: 0..255
     const lines = [];
     for (let base = 0; base < 256; base += 16) {
-        const bytes = [];
+        const cells = [];
         for (let i = 0; i < 16; i++) {
             const addr = base + i;
             const b = mem[addr] & 0xFF;
-            bytes.push(hex2(b));
+
+            let cls = "cell";
+            if (addr === pc) cls += " hi-pc";
+            if (lastWrite !== null && addr === lastWrite) cls += " hi-write";
+
+            cells.push(`<span class="${cls}">${hex2(b)}</span>`);
         }
+
         const inLine = (pc >= base && pc < base + 16);
         const prefix = inLine ? "▶ " : "  ";
-        lines.push(`${prefix}${hex2(base)}: ${bytes.join(" ")}`);
+        lines.push(`${prefix}<span class="addr">${hex2(base)}:</span> ${cells.join(" ")}`);
     }
     return lines.join("\n");
 }
@@ -342,7 +354,7 @@ function render() {
 
     elOut.textContent = lines.join("\n") + (cpu.halted ? "\n\n(HALTED)" : "");
 
-    elMem.textContent = renderMemory(cpu.mem, cpu.pc);
+    elMem.innerHTML = renderMemory(cpu.mem, cpu.pc, cpu.lastWrite);
 }
 
 
