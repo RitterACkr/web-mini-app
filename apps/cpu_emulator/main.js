@@ -17,6 +17,9 @@ const OP = {
     LDA_MEM:    0x20,   // A = mem[addr], Z set
     STA_MEM:    0x21,   // mem[addr] = A
 
+    PUSH_A:     0x30,   // mem[SP] = A, SP = SP-1
+    POP_A:      0x31,   // SP = SP+1, A = mem[SP]
+
     HALT:       0xFF
 };
 
@@ -37,11 +40,13 @@ const INSTR_SIZE = {
     DEC_A:      1,
     CMP_A_IMM:  2,
     SUB_A_IMM:  2,
-    LDA_MEM:    2,
-    STA_MEM:    2,
     JMP:        2,
     JZ:         2,
     JNZ:        2,
+    LDA_MEM:    2,
+    STA_MEM:    2,
+    PUSH_A:     1,
+    POP_A:      1,
     HALT:       1
 };
 
@@ -181,6 +186,16 @@ class CPU {
         return v ?? OP.HALT;
     }
 
+    push8(v) {
+        this.mem[this.sp] = v & 0xFF;
+        this.sp = (this.sp - 1) & 0xFF;
+    }
+
+    pop8() {
+        this.sp = (this.sp + 1) & 0xFF;
+        return this.mem[this.sp] & 0xFF;
+    }
+
     step() {
         if (this.halted) return;
 
@@ -241,24 +256,6 @@ class CPU {
                 this.z = (this.a === 0) ? 1 : 0;
                 break;
             }
-            case OP.LDA_MEM: {
-                const addr = this.fetch();
-                operand = addr & 0xFF;
-
-                this.a = this.mem[addr & 0xFF];
-                this.z = (this.a === 0) ? 1 : 0;
-                break;
-            }
-            case OP.STA_MEM: {
-                const addr = this.fetch();
-                operand = addr & 0xFF;
-
-                const a = addr & 0xFF;
-                this.mem[a] = this.a & 0xFF;
-
-                this.lastWrite = a;
-                break;
-            }
             case OP.JMP: {
                 const addr = this.fetch();
                 operand = addr & 0xFF;
@@ -282,6 +279,33 @@ class CPU {
                 if (this.z === 0) {
                     this.pc = addr & 0xFF;
                 }
+                break;
+            }
+            case OP.LDA_MEM: {
+                const addr = this.fetch();
+                operand = addr & 0xFF;
+
+                this.a = this.mem[addr & 0xFF];
+                this.z = (this.a === 0) ? 1 : 0;
+                break;
+            }
+            case OP.STA_MEM: {
+                const addr = this.fetch();
+                operand = addr & 0xFF;
+
+                const a = addr & 0xFF;
+                this.mem[a] = this.a & 0xFF;
+
+                this.lastWrite = a;
+                break;
+            }
+            case OP.PUSH_A: {
+                this.push8(this.a);
+                break;
+            }
+            case OP.POP_A: {
+                this.a = this.pop8();
+                this.z = (this.a === 0) ? 1 : 0;
                 break;
             }
             case OP.HALT:
