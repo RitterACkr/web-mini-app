@@ -19,6 +19,8 @@ const OP = {
 
     PUSH_A:     0x30,   // mem[SP] = A, SP = SP-1
     POP_A:      0x31,   // SP = SP+1, A = mem[SP]
+    CALL:       0x32,   // CALL addr (push return PC, then jump)
+    RET:        0x33,   // RET (pop PC)
 
     HALT:       0xFF
 };
@@ -47,6 +49,8 @@ const INSTR_SIZE = {
     STA_MEM:    2,
     PUSH_A:     1,
     POP_A:      1,
+    CALL:       2,
+    RET:        1,
     HALT:       1
 };
 
@@ -306,6 +310,20 @@ class CPU {
             case OP.POP_A: {
                 this.a = this.pop8();
                 this.z = (this.a === 0) ? 1 : 0;
+                break;
+            }
+            case OP.CALL: {
+                const addr = this.fetch();
+                operand = addr & 0xFF;
+
+                const returnPC = this.pc & 0xFF;
+
+                this.push8(returnPC);
+                this.pc = addr &  0xFF;
+                break;
+            }
+            case OP.RET: {
+                this.pc = this.pop8() & 0xFF;
                 break;
             }
             case OP.HALT:
