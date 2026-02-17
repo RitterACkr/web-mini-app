@@ -9,6 +9,7 @@ const OP = {
     DEC_A:      0x05,   // A = (A-1)&0xFF, Z set
     CMP_A_IMM:  0x06,   // Z = (A-imm==0) ? 1 : 0, Aは変更なし
     SUB_A_IMM:  0x07,   // A = (A-imm)&0xFF, Z set
+    ADC:        0x08,   // A = A + B + C
 
     JMP:        0x10,   // PC = addr
     JZ:         0x11,   // if Z==1: PC = addr
@@ -44,6 +45,7 @@ const INSTR_SIZE = {
     DEC_A:      1,
     CMP_A_IMM:  2,
     SUB_A_IMM:  2,
+    ADC:        1,
     JMP:        2,
     JZ:         2,
     JNZ:        2,
@@ -204,6 +206,7 @@ class CPU {
         this.a = 0;
         this.b = 0;
         this.z = 0;
+        this.c = 0;
         this.sp = 0xFF;
 
         // state
@@ -250,6 +253,7 @@ class CPU {
         const a0 = this.a & 0xFF;
         const b0 = this.b & 0xFF;
         const z0 = this.z & 0xFF;
+        const c0 = this.c & 0xFF;
         const sp0 = this.sp & 0xFF;
         let operand = null;
 
@@ -273,7 +277,16 @@ class CPU {
                 break;
             }
             case OP.ADD: {
+                const result = (this.a + this.b);
+                this.c = (result > 0xFF) ? 1 : 0; // 8bitを超えたら Carry = 1
                 this.a = (this.a  + this.b) & 0xFF;
+                this.z = (this.a === 0) ? 1 : 0;
+                break;
+            }
+            case OP.ADC: {
+                const result = (this.a + this.b + this.c);
+                this.c = (result > 0xFF) ? 1 : 0;
+                this.a = result & 0xFF;
                 this.z = (this.a === 0) ? 1 : 0;
                 break;
             }
@@ -387,6 +400,7 @@ class CPU {
         const a1 = this.a & 0xFF;
         const b1 = this.b & 0xFF;
         const z1 = this.z & 0xFF;
+        const c1 = this.c & 0xFF;
         const pc1 = this.pc & 0xFF;
         const sp1 = this.sp & 0xFF;
 
@@ -396,9 +410,10 @@ class CPU {
         const dA = (a0 !== a1) ? `${hex2(a0)}→${hex2(a1)}` : `${hex2(a1)}`;
         const dB = (b0 !== b1) ? `${hex2(b0)}→${hex2(b1)}` : `${hex2(b1)}`;
         const dZ = (z0 !== z1) ? `${z0}→${z1}` : `${z1}`;
+        const dC = (c0 !== c1) ? `${c0}→${c1}` : `${c1}`;
         const dSP = (sp0 !== sp1) ? `${hex2(sp0)}→${hex2(sp1)}` : `${hex2(sp1)}`;
 
-        const line = `PC=${hex2(pc0)}  ${opStr.padEnd(14)} | A=${dA} B=${dB} Z=${dZ} SP=${dSP} -> PC=${hex2(pc1)}${this.halted ? " (HALT)" : ""}`;
+        const line = `PC=${hex2(pc0)}  ${opStr.padEnd(14)} | A=${dA} B=${dB} Z=${dZ} C=${dC} SP=${dSP} -> PC=${hex2(pc1)}${this.halted ? " (HALT)" : ""}`;
 
         this.trace.push(line);
         if (this.trace.length > 200) this.trace.shift();
@@ -415,6 +430,7 @@ const elPC = document.getElementById("pc");
 const elA = document.getElementById("a");
 const elB = document.getElementById("b");
 const elZ = document.getElementById("z");
+const elC = document.getElementById("c");
 const elSP = document.getElementById("sp");
 
 // --- ROM (bytes) ---
@@ -691,6 +707,7 @@ function render() {
     elA.textContent = `$${hex2(cpu.a)} (${cpu.a})`;
     elB.textContent = `$${hex2(cpu.b)} (${cpu.b})`;
     elZ.textContent = `${cpu.z}`;
+    elC.textContent = `${cpu.c}`;
     elSP.textContent = `$${hex2(cpu.sp)} (${cpu.sp})`;
 
     renderROM();
