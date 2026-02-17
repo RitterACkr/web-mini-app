@@ -35,6 +35,15 @@
     <main class="main">
         <section class="panel">
             <h2>ASM</h2>
+            <div class="row">
+                <label>Sample</label>
+                <select id="sampleSelect">
+                    <option value="">-- select --</option>
+                    <option value="countdown">Countdown</option>
+                    <option value="fibonacci">Fibonacci</option>
+                    <option value="addition">8bit Addition</option>
+                </select>
+            </div>
             <textarea id="asm" spellcheck="false"></textarea>
             <pre id="asmErr"></pre>
 
@@ -44,6 +53,7 @@
                 <div><span>A</span><code id="a"></code></div>
                 <div><span>B</span><code id="b"></code></div>
                 <div><span>Z</span><code id="z"></code></div>
+                <div><span>C</span><code id="c"></code></div>
                 <div><span>SP</span><code id="sp"></code></div>
             </div>
 

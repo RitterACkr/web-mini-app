@@ -9,6 +9,7 @@ const OP = {
     DEC_A:      0x05,   // A = (A-1)&0xFF, Z set
     CMP_A_IMM:  0x06,   // Z = (A-imm==0) ? 1 : 0, Aは変更なし
     SUB_A_IMM:  0x07,   // A = (A-imm)&0xFF, Z set
+    ADC:        0x08,   // A = A + B + C
 
     JMP:        0x10,   // PC = addr
     JZ:         0x11,   // if Z==1: PC = addr
@@ -44,6 +45,7 @@ const INSTR_SIZE = {
     DEC_A:      1,
     CMP_A_IMM:  2,
     SUB_A_IMM:  2,
+    ADC:        1,
     JMP:        2,
     JZ:         2,
     JNZ:        2,
@@ -148,6 +150,44 @@ function assemble(asm) {
     return new Uint8Array(out);
 }
 
+// ==================
+// Disassembler
+// ==================
+function disassemle(mem, addr) {
+    const opcode = mem[addr] & 0xFF;
+    const opName = OP_NAME[opcode];
+
+    // 未定義の命令の場合
+    if (!opName) {
+        return {
+            addr: addr,
+            size: 1,
+            opcode: opcode,
+            opName: `DB`,   // Define Byte (未定義の命令)
+            operand: null,
+            text: `DB 0x${hex2(opcode)}`
+        };
+    }
+
+    const size = INSTR_SIZE[opName];
+    let operand = null;
+    let text = opName;
+
+    // 2バイト命令の場合, オペランドを読み取る
+    if (size === 2) {
+        operand = mem[(addr + 1) & 0xFF] & 0xFF;
+        text = `${opName} 0x${hex2(operand)}`;
+    }
+
+    return {
+        addr: addr,
+        size: size,
+        opcode: opcode,
+        opName: opName,
+        operand: operand,
+        text: text
+    };
+}
 
 // ==================
 // CPU
@@ -166,6 +206,7 @@ class CPU {
         this.a = 0;
         this.b = 0;
         this.z = 0;
+        this.c = 0;
         this.sp = 0xFF;
 
         // state
@@ -212,6 +253,7 @@ class CPU {
         const a0 = this.a & 0xFF;
         const b0 = this.b & 0xFF;
         const z0 = this.z & 0xFF;
+        const c0 = this.c & 0xFF;
         const sp0 = this.sp & 0xFF;
         let operand = null;
 
@@ -235,7 +277,16 @@ class CPU {
                 break;
             }
             case OP.ADD: {
+                const result = (this.a + this.b);
+                this.c = (result > 0xFF) ? 1 : 0; // 8bitを超えたら Carry = 1
                 this.a = (this.a  + this.b) & 0xFF;
+                this.z = (this.a === 0) ? 1 : 0;
+                break;
+            }
+            case OP.ADC: {
+                const result = (this.a + this.b + this.c);
+                this.c = (result > 0xFF) ? 1 : 0;
+                this.a = result & 0xFF;
                 this.z = (this.a === 0) ? 1 : 0;
                 break;
             }
@@ -349,6 +400,7 @@ class CPU {
         const a1 = this.a & 0xFF;
         const b1 = this.b & 0xFF;
         const z1 = this.z & 0xFF;
+        const c1 = this.c & 0xFF;
         const pc1 = this.pc & 0xFF;
         const sp1 = this.sp & 0xFF;
 
@@ -358,9 +410,10 @@ class CPU {
         const dA = (a0 !== a1) ? `${hex2(a0)}→${hex2(a1)}` : `${hex2(a1)}`;
         const dB = (b0 !== b1) ? `${hex2(b0)}→${hex2(b1)}` : `${hex2(b1)}`;
         const dZ = (z0 !== z1) ? `${z0}→${z1}` : `${z1}`;
+        const dC = (c0 !== c1) ? `${c0}→${c1}` : `${c1}`;
         const dSP = (sp0 !== sp1) ? `${hex2(sp0)}→${hex2(sp1)}` : `${hex2(sp1)}`;
 
-        const line = `PC=${hex2(pc0)}  ${opStr.padEnd(14)} | A=${dA} B=${dB} Z=${dZ} SP=${dSP} -> PC=${hex2(pc1)}${this.halted ? " (HALT)" : ""}`;
+        const line = `PC=${hex2(pc0)}  ${opStr.padEnd(14)} | A=${dA} B=${dB} Z=${dZ} C=${dC} SP=${dSP} -> PC=${hex2(pc1)}${this.halted ? " (HALT)" : ""}`;
 
         this.trace.push(line);
         if (this.trace.length > 200) this.trace.shift();
@@ -377,6 +430,7 @@ const elPC = document.getElementById("pc");
 const elA = document.getElementById("a");
 const elB = document.getElementById("b");
 const elZ = document.getElementById("z");
+const elC = document.getElementById("c");
 const elSP = document.getElementById("sp");
 
 // --- ROM (bytes) ---
@@ -392,6 +446,7 @@ const elMem = document.getElementById("mem");
 const elTrace = document.getElementById("trace");
 
 // --- ASM ---
+const elSampleSelect = document.getElementById("sampleSelect");
 const elAsm = document.getElementById("asm");
 const elAsmErr = document.getElementById("asmErr");
 
@@ -446,6 +501,107 @@ end:
     HALT
 `.trim();
 
+// ==================
+// Sample Programs
+// ==================
+const SAMPLES = {
+    countdown: `
+; === Countdown ===
+; RAM[0x80] にカウントダウンの値を保存しながら
+; 5 > 4 > 3 > 2 > 1 > 0 と出力するサンプル
+
+    LDA_IMM 5
+    STA_MEM 0x80
+
+loop:
+    LDA_MEM 0x80
+    PRINTA
+
+    CMP_A_IMM 0
+    JZ end
+
+    SUB_A_IMM 1
+    STA_MEM 0x80
+
+    CMP_A_IMM 0
+    JNZ loop
+
+end:
+    HALT`,
+
+    fibonacci: `
+; === Fibonacci ===
+; F(0)=0, F(1)=1, F(2)=1, F(3)=2, F(4)=3, F(5)=5, F(6)=8
+;
+; 使用RAM:
+;   0x80 = prev (前の値)
+;   0x81 = curr (現在の値)
+;   0x82 = loop counter (ループ回数)
+;   0x83 = tmp (計算の一時保存用)
+
+    ; prev = 0, curr = 1
+    LDA_IMM 0
+    STA_MEM 0x80
+    LDA_IMM 1
+    STA_MEM 0x81
+
+    ; counter = 7
+    LDA_IMM 7
+    STA_MEM 0x82
+
+    ; print F(0) = 0
+    LDA_MEM 0x80
+    PRINTA
+
+loop:
+    ; print curr
+    LDA_MEM 0x81
+    PRINTA
+
+    ; B = curr
+    LDA_MEM 0x81
+    PUSH_A
+    POP_B
+
+    ; A = prev
+    LDA_MEM 0x80
+
+    ; A = next = prev + curr
+    ADD
+
+    ; next を一時保存
+    STA_MEM 0x83
+
+    ; prev = curr
+    LDA_MEM 0x81
+    STA_MEM 0x80
+
+    ; curr = next
+    LDA_MEM 0x83
+    STA_MEM 0x81
+
+    ; counter--
+    LDA_MEM 0x82
+    DEC_A
+    STA_MEM 0x82
+    JZ end
+    JMP loop
+
+end:
+    HALT`,
+
+    addition: `
+; === 8bit Addiction ===
+; 3 + 5 を計算して結果を出力する
+; レジスタ A と B を使った最もシンプルな加算
+
+    LDA_IMM 3
+    LDB_IMM 5
+    ADD
+    PRINTA
+    HALT`
+};
+
 
 elAsm.value = DEFAULT_ASM;
 
@@ -485,12 +641,32 @@ function parseAddr(s) {
 // Render
 // ==================
 function renderROM() {
-    // PCの位置をハイライト
     let s = "";
-    for (let i = 0; i < PROGRAM.length; i++) {
-        const byte = `${hex2(i)}: ${hex2(cpu.mem[i])}`;
-        s += (i === cpu.pc ? `<span class="line-hi">${byte}</span>` : byte) + "\n";
+    let addr = 0;
+
+    while (addr < PROGRAM.length) {
+        const dis = disassemle(cpu.mem, addr);
+
+        // バイト列の構築
+        let bytes = hex2(dis.opcode);
+        if (dis.size == 2 && addr + 1 < cpu.mem.length) {
+            bytes += ` ${hex2(cpu.mem[addr + 1])}`;
+        }
+        bytes = bytes.padEnd(8);
+
+        // 行全体
+        const line = `${hex2(addr)}: ${bytes} ${dis.text}`;
+
+        // PCハイライト
+        if (addr === cpu.pc) {
+            s += `<span class="line-hi">${line}</span>\n`;
+        } else {
+            s += line + "\n";
+        }
+
+        addr += dis.size;
     }
+
     elROM.innerHTML = s || "(empty)";
 }
 
@@ -531,6 +707,7 @@ function render() {
     elA.textContent = `$${hex2(cpu.a)} (${cpu.a})`;
     elB.textContent = `$${hex2(cpu.b)} (${cpu.b})`;
     elZ.textContent = `${cpu.z}`;
+    elC.textContent = `${cpu.c}`;
     elSP.textContent = `$${hex2(cpu.sp)} (${cpu.sp})`;
 
     renderROM();
@@ -609,6 +786,14 @@ btnReset.addEventListener("click", () => {
     stopRunIfNeeded();
     cpu.load(PROGRAM);
     render();
+});
+
+elSampleSelect.addEventListener("change", () => {
+    const key = elSampleSelect.value;
+    if (!key) return;
+    elAsm.value = SAMPLES[key];
+    doAssemble();
+    elSampleSelect.value = "";
 });
 
 function restartTimerIfRunning() {
