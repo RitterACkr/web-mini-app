@@ -430,6 +430,7 @@ const elMem = document.getElementById("mem");
 const elTrace = document.getElementById("trace");
 
 // --- ASM ---
+const elSampleSelect = document.getElementById("sampleSelect");
 const elAsm = document.getElementById("asm");
 const elAsmErr = document.getElementById("asmErr");
 
@@ -483,6 +484,107 @@ loop:
 end:
     HALT
 `.trim();
+
+// ==================
+// Sample Programs
+// ==================
+const SAMPLES = {
+    countdown: `
+; === Countdown ===
+; RAM[0x80] にカウントダウンの値を保存しながら
+; 5 > 4 > 3 > 2 > 1 > 0 と出力するサンプル
+
+    LDA_IMM 5
+    STA_MEM 0x80
+
+loop:
+    LDA_MEM 0x80
+    PRINTA
+
+    CMP_A_IMM 0
+    JZ end
+
+    SUB_A_IMM 1
+    STA_MEM 0x80
+
+    CMP_A_IMM 0
+    JNZ loop
+
+end:
+    HALT`,
+
+    fibonacci: `
+; === Fibonacci ===
+; F(0)=0, F(1)=1, F(2)=1, F(3)=2, F(4)=3, F(5)=5, F(6)=8
+;
+; 使用RAM:
+;   0x80 = prev (前の値)
+;   0x81 = curr (現在の値)
+;   0x82 = loop counter (ループ回数)
+;   0x83 = tmp (計算の一時保存用)
+
+    ; prev = 0, curr = 1
+    LDA_IMM 0
+    STA_MEM 0x80
+    LDA_IMM 1
+    STA_MEM 0x81
+
+    ; counter = 7
+    LDA_IMM 7
+    STA_MEM 0x82
+
+    ; print F(0) = 0
+    LDA_MEM 0x80
+    PRINTA
+
+loop:
+    ; print curr
+    LDA_MEM 0x81
+    PRINTA
+
+    ; B = curr
+    LDA_MEM 0x81
+    PUSH_A
+    POP_B
+
+    ; A = prev
+    LDA_MEM 0x80
+
+    ; A = next = prev + curr
+    ADD
+
+    ; next を一時保存
+    STA_MEM 0x83
+
+    ; prev = curr
+    LDA_MEM 0x81
+    STA_MEM 0x80
+
+    ; curr = next
+    LDA_MEM 0x83
+    STA_MEM 0x81
+
+    ; counter--
+    LDA_MEM 0x82
+    DEC_A
+    STA_MEM 0x82
+    JZ end
+    JMP loop
+
+end:
+    HALT`,
+
+    addition: `
+; === 8bit Addiction ===
+; 3 + 5 を計算して結果を出力する
+; レジスタ A と B を使った最もシンプルな加算
+
+    LDA_IMM 3
+    LDB_IMM 5
+    ADD
+    PRINTA
+    HALT`
+};
 
 
 elAsm.value = DEFAULT_ASM;
@@ -667,6 +769,14 @@ btnReset.addEventListener("click", () => {
     stopRunIfNeeded();
     cpu.load(PROGRAM);
     render();
+});
+
+elSampleSelect.addEventListener("change", () => {
+    const key = elSampleSelect.value;
+    if (!key) return;
+    elAsm.value = SAMPLES[key];
+    doAssemble();
+    elSampleSelect.value = "";
 });
 
 function restartTimerIfRunning() {
