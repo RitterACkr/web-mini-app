@@ -148,6 +148,44 @@ function assemble(asm) {
     return new Uint8Array(out);
 }
 
+// ==================
+// Disassembler
+// ==================
+function disassemle(mem, addr) {
+    const opcode = mem[addr] & 0xFF;
+    const opName = OP_NAME[opcode];
+
+    // 未定義の命令の場合
+    if (!opName) {
+        return {
+            addr: addr,
+            size: 1,
+            opcode: opcode,
+            opName: `DB`,   // Define Byte (未定義の命令)
+            operand: null,
+            text: `DB 0x${hex2(opcode)}`
+        };
+    }
+
+    const size = INSTR_SIZE[opName];
+    let operand = null;
+    let text = opName;
+
+    // 2バイト命令の場合, オペランドを読み取る
+    if (size === 2) {
+        operand = mem[(addr + 1) & 0xFF] & 0xFF;
+        text = `${opName} 0x${hex2(operand)}`;
+    }
+
+    return {
+        addr: addr,
+        size: size,
+        opcode: opcode,
+        opName: opName,
+        operand: operand,
+        text: text
+    };
+}
 
 // ==================
 // CPU
@@ -485,12 +523,32 @@ function parseAddr(s) {
 // Render
 // ==================
 function renderROM() {
-    // PCの位置をハイライト
     let s = "";
-    for (let i = 0; i < PROGRAM.length; i++) {
-        const byte = `${hex2(i)}: ${hex2(cpu.mem[i])}`;
-        s += (i === cpu.pc ? `<span class="line-hi">${byte}</span>` : byte) + "\n";
+    let addr = 0;
+
+    while (addr < PROGRAM.length) {
+        const dis = disassemle(cpu.mem, addr);
+
+        // バイト列の構築
+        let bytes = hex2(dis.opcode);
+        if (dis.size == 2 && addr + 1 < cpu.mem.length) {
+            bytes += ` ${hex2(cpu.mem[addr + 1])}`;
+        }
+        bytes = bytes.padEnd(8);
+
+        // 行全体
+        const line = `${hex2(addr)}: ${bytes} ${dis.text}`;
+
+        // PCハイライト
+        if (addr === cpu.pc) {
+            s += `<span class="line-hi">${line}</span>\n`;
+        } else {
+            s += line + "\n";
+        }
+
+        addr += dis.size;
     }
+
     elROM.innerHTML = s || "(empty)";
 }
 
