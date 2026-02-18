@@ -246,6 +246,7 @@ class CPU {
         // state
         this.halted = false;
         this.output = [];
+        this.watchHit = null;
 
         // latest write
         this.lastWrite = null;
@@ -271,6 +272,11 @@ class CPU {
 
     push8(v) {
         this.mem[this.sp] = v & 0xFF;
+
+        if (watchAddr !== null && this.sp === watchAddr) {
+            this.watchHit = this.sp;
+        }
+
         this.sp = (this.sp - 1) & 0xFF;
     }
 
@@ -390,6 +396,11 @@ class CPU {
                 this.mem[a] = this.a & 0xFF;
 
                 this.lastWrite = a;
+
+                if (watchAddr !== null && a === watchAddr) {
+                    this.watchHit = a;
+                }
+
                 break;
             }
             case OP.PUSH_A: {
@@ -926,6 +937,15 @@ function runLoop() {
         }
 
         cpu.step();
+
+        if (cpu.watchHit !== null) {
+            cpu.trace.push(`[WATCH] Write to $${hex2(cpu.watchHit)}`);
+            cpu.watchHit = null;
+            stopRunIfNeeded();
+            render();
+            return;
+        }
+
         if (cpu.halted) break;
     }
     render();
@@ -967,6 +987,12 @@ btnAssemble.addEventListener("click", doAssemble);
 
 btnStep.addEventListener("click", () => {
     cpu.step();
+
+    if (cpu.watchHit !== null) {
+        cpu.trace.push(`[WATCH] Write to $${hex2(cpu.watchHit)}`);
+        cpu.watchHit = null;
+    }
+
     render();
 });
 
