@@ -78,6 +78,31 @@ function tokenize(line) {
 function assemble(asm) {
     const lines = asm.split("\n");
 
+    // 0. .equ による定数定義を取得
+    const constants = new Map();
+
+    for (let lineNo = 0; lineNo < lines.length; lineNo++) {
+        const raw = lines[lineNo].trim();
+        if (!raw || raw.startsWith(";")) continue;
+
+        // NAME .equ VALUE のパターン
+        const equMatch = raw.match(/^([A-Za-z_]\w*)\s+\.equ\s+(.+)$/i);
+        if (equMatch) {
+            const name = equMatch[1];
+            const valueStr = equMatch[2].split(";")[0].trim();
+            const value = parseNumber(valueStr);
+
+            if (value == null) {
+                throw new Error(`Invalid .equ value "${valueStr}" at line ${lineNo + 1}`);
+            }
+            if (constants.has(name)) {
+                throw new Error(`Duplicate constant "${name}" at line ${lineNo + 1}`);
+            }
+
+            constants.set(name, value & 0xFF);
+        }
+    }
+
     // 1. lebel -> addr
     const labels = new Map();
     let pc = 0;
@@ -85,6 +110,9 @@ function assemble(asm) {
     for (let lineNo = 0; lineNo < lines.length; lineNo++) {
         const raw = lines[lineNo].trim();
         if (!raw || raw.startsWith(";")) continue;
+
+        // .equ 行をスキップ
+        if (/^[A-Za-z_]\w*\s+\.equ\s+/i.test(raw)) continue;
         
         // label:
         if (/^[A-Za-z_]\w*:\s*$/.test(raw)) {
@@ -114,6 +142,9 @@ function assemble(asm) {
         const raw = lines[lineNo].trim();
         if (!raw || raw.startsWith(";")) continue;
 
+        // .equ 行はスキップ
+        if (/^[A-Za-z_]\w*\s+\.equ\s+/i.test(raw)) continue;
+
         // label:
         if (/^[A-Za-z_]\w*:\s*$/.test(raw)) continue;
 
@@ -136,10 +167,13 @@ function assemble(asm) {
             let val = parseNumber(operandToken);
 
             if (val === null) {
-                if (!labels.has(operandToken)) {
+                if (constants.has(operandToken)) {
+                    val = constants.get(operandToken);
+                } else if (labels.has(operandToken)) {
+                    val = labels.get(operandToken);
+                } else {
                     throw new Error(`Unknown label: "${operandToken}" at line ${lineNo + 1}`);
                 }
-                val = labels.get(operandToken);
             }
 
             out.push(val & 0xFF);
