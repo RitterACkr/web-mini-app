@@ -253,6 +253,10 @@ class CPU {
 
         // trace log
         this.trace = [];
+
+        // step back
+        this.history = [];
+        this.maxHistory = 100;
     }
 
     load(program, startAddr = 0x00) {
@@ -287,6 +291,9 @@ class CPU {
 
     step() {
         if (this.halted) return;
+
+        // 実行前の状態を保存
+        this.saveSnapshot();
 
         // --  trace: before --
         const pc0 = this.pc & 0xFF;
@@ -463,6 +470,61 @@ class CPU {
         this.trace.push(line);
         if (this.trace.length > 200) this.trace.shift();
     }
+
+    saveSnapshot() {
+        const snapshot = {
+            // registers
+            pc: this.pc,
+            a: this.a,
+            b: this.b,
+            z: this.z,
+            c: this.c,
+            sp: this.sp,
+
+            // memory
+            mem: new Uint8Array(this.mem),
+
+            // state
+            halted: this.halted,
+            output: [...this.output],
+            lastWrite: this.lastWrite,
+            trace: [...this.trace]
+        };
+
+        this.history.push(snapshot);
+
+        // 履歴が多い場合は古いものから削除
+        if (this.history.length > this.maxHistory) {
+            this.history.shift();
+        }
+    }
+
+    restoreSnapshot(snapshot) {
+        if (!snapshot) return false;
+
+        // registers
+        this.pc = snapshot.pc;
+        this.a = snapshot.a;
+        this.b = snapshot.b;
+        this.z = snapshot.z;
+        this.c = snapshot.c;
+        this.sp = snapshot.sp;
+
+        // memory
+        this.mem.set(snapshot.mem);
+
+        // state
+        this.halted = snapshot.halted;
+        this.output = [...snapshot.output];
+        this.lastWrite = snapshot.lastWrite;
+        this.trace = [...snapshot.trace];
+
+        return true;
+    }
+
+    canStepBack() {
+        return this.history.length > 0;
+    }
 }
 
 
@@ -514,6 +576,7 @@ let runIntervalMs = 50;
 
 // --- Control Button ---
 const btnAssemble = document.getElementById("assembleBtn")
+const btnStepBack = document.getElementById("stepBack");
 const btnStep = document.getElementById("step");
 const btnRun = document.getElementById("run");
 const btnStop = document.getElementById("stop");
@@ -818,6 +881,8 @@ function render() {
 
     elTrace.textContent = cpu.trace.slice(-80).join("\n");
     elTrace.scrollTop = elTrace.scrollHeight;
+
+    updateStepBackButton();
 }
 
 // ==================
@@ -987,6 +1052,24 @@ btnWpClear.addEventListener("click", () => {
 
 btnAssemble.addEventListener("click", doAssemble);
 
+function updateStepBackButton() {
+    btnStepBack.disabled = !cpu.canStepBack();
+}
+
+btnStepBack.addEventListener("click", () => {
+    if (!cpu.canStepBack()) return;
+
+    const snapshot = cpu.history.pop();
+    cpu.restoreSnapshot(snapshot);
+
+    // トレースに記録
+    cpu.trace.push(`[STEP BACK] Restored to PC=${hex2(cpu.pc)}`);
+    if (cpu.trace.length > 200) cpu.trace.shift();
+
+    render();
+    updateStepBackButton();
+});
+
 btnStep.addEventListener("click", () => {
     cpu.step();
 
@@ -996,6 +1079,7 @@ btnStep.addEventListener("click", () => {
     }
 
     render();
+    updateStepBackButton();
 });
 
 btnRun.addEventListener("click", () => {
@@ -1046,3 +1130,4 @@ doAssemble();
 renderBp();
 renderWp();
 renderSpeed();
+updateStepBackButton();
