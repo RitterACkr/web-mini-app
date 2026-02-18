@@ -490,6 +490,12 @@ const btnBpClear = document.getElementById("bpClear");
 const elBpView = document.getElementById("bpView");
 let breakAddr = null;
 
+// --- Watch Point ---
+const elWpInput = document.getElementById("wpInput");
+const btnWpClear = document.getElementById("wpClear");
+const elWpView = document.getElementById("wpView");
+let watchAddr = null;
+
 // --- Speed ---
 const elSpeed = document.getElementById("speed");
 const elSpeedLabel = document.getElementById("speedLabel");
@@ -773,6 +779,10 @@ function renderBp() {
     elBpView.textContent = breakAddr === null ? "(none)" : `$${hex2(breakAddr)} (${breakAddr})`;
 }
 
+function renderWp() {
+    elWpView.textContent = watchAddr === null ? "(none)" : `$${hex2(watchAddr)} (${watchAddr})`;
+}
+
 function renderSpeed() {
     if (!elSpeed || !elSpeedLabel) return;
     elSpeedLabel.textContent = `${runIntervalMs}ms`;
@@ -923,7 +933,7 @@ function runLoop() {
     if (cpu.halted) {
         stopRunIfNeeded();
     }
-}
+};
 
 elBpInput.addEventListener("keydown", (e) => {
     if (e.key !== "Enter") return;
@@ -931,13 +941,27 @@ elBpInput.addEventListener("keydown", (e) => {
     const v = parseAddr(elBpInput.value);
     breakAddr = v;
     renderBp();
-})
+});
 
 btnBpClear.addEventListener("click", () => {
     breakAddr = null;
     elBpInput.value = "";
     renderBp();
-})
+});
+
+elWpInput.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+
+    const v = parseAddr(elWpInput.value);
+    watchAddr = v;
+    renderWp();
+});
+
+btnWpClear.addEventListener("click", () => {
+    watchAddr = null;
+    elWpInput.value = "";
+    renderWp();
+});
 
 btnAssemble.addEventListener("click", doAssemble);
 
@@ -992,4 +1016,5 @@ if (elSpeed) {
 
 doAssemble();
 renderBp();
+renderWp();
 renderSpeed();
