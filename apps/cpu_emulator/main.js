@@ -775,6 +775,7 @@ function renderMemory(mem, pc, lastWrite) {
             let cls = "cell";
             if (addr === pc) cls += " hi-pc";
             if (lastWrite !== null && addr === lastWrite) cls += " hi-write";
+            if (watchAddr !== null && addr === watchAddr) cls += " hi-watch";
 
             cells.push(`<span class="${cls}" data-addr="${addr}">${hex2(b)}</span>`);
         }
@@ -792,6 +793,7 @@ function renderBp() {
 
 function renderWp() {
     elWpView.textContent = watchAddr === null ? "(none)" : `$${hex2(watchAddr)} (${watchAddr})`;
+    render();
 }
 
 function renderSpeed() {
