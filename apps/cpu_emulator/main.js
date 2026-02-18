@@ -669,7 +669,7 @@ TMP .equ 0x83
     STA_MEM COUNT
 
     ; print F(0) = 0
-    1LDA_MEM PREV
+    LDA_MEM PREV
     PRINTA
 
 loop:
@@ -768,6 +768,7 @@ function stopRunIfNeeded() {
     }
     btnRun.disabled = false;
     btnStop.disabled = true;
+    updateStepBackButton();
 }
 
 function doAssemble() {
@@ -778,6 +779,8 @@ function doAssemble() {
         elAsmErr.textContent = "";
 
         cpu.load(PROGRAM);
+
+        cpu.history = [];
 
         render();
     } catch (e) {
@@ -1098,6 +1101,9 @@ btnStop.addEventListener("click", () => {
 btnReset.addEventListener("click", () => {
     stopRunIfNeeded();
     cpu.load(PROGRAM);
+
+    cpu.history = [];
+
     render();
 });
 
