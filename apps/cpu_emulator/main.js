@@ -543,19 +543,20 @@ const SAMPLES = {
 ; === Countdown ===
 ; RAM[0x80] にカウントダウンの値を保存しながら
 ; 5 > 4 > 3 > 2 > 1 > 0 と出力するサンプル
+COUNTER .equ 0x80
 
     LDA_IMM 5
-    STA_MEM 0x80
+    STA_MEM COUNTER
 
 loop:
-    LDA_MEM 0x80
+    LDA_MEM COUNTER
     PRINTA
 
     CMP_A_IMM 0
     JZ end
 
     SUB_A_IMM 1
-    STA_MEM 0x80
+    STA_MEM COUNTER
 
     CMP_A_IMM 0
     JNZ loop
@@ -572,52 +573,56 @@ end:
 ;   0x81 = curr (現在の値)
 ;   0x82 = loop counter (ループ回数)
 ;   0x83 = tmp (計算の一時保存用)
+PREV .equ 0x80
+CURR .equ 0x81
+COUNT .equ 0x82
+TMP .equ 0x83
 
     ; prev = 0, curr = 1
     LDA_IMM 0
-    STA_MEM 0x80
+    STA_MEM PREV
     LDA_IMM 1
-    STA_MEM 0x81
+    STA_MEM CURR
 
     ; counter = 7
     LDA_IMM 7
-    STA_MEM 0x82
+    STA_MEM COUNT
 
     ; print F(0) = 0
-    LDA_MEM 0x80
+    1LDA_MEM PREV
     PRINTA
 
 loop:
     ; print curr
-    LDA_MEM 0x81
+    LDA_MEM CURR
     PRINTA
 
     ; B = curr
-    LDA_MEM 0x81
+    LDA_MEM CURR
     PUSH_A
     POP_B
 
     ; A = prev
-    LDA_MEM 0x80
+    LDA_MEM PREV
 
     ; A = next = prev + curr
     ADD
 
     ; next を一時保存
-    STA_MEM 0x83
+    STA_MEM TMP
 
     ; prev = curr
-    LDA_MEM 0x81
-    STA_MEM 0x80
+    LDA_MEM CURR
+    STA_MEM PREV
 
     ; curr = next
-    LDA_MEM 0x83
-    STA_MEM 0x81
+    LDA_MEM TMP
+    STA_MEM CURR
 
     ; counter--
-    LDA_MEM 0x82
+    LDA_MEM COUNT
     DEC_A
-    STA_MEM 0x82
+    STA_MEM COUNT
     JZ end
     JMP loop
 
@@ -648,23 +653,25 @@ end:
 ; 計算:
 ;   下位: 0xFF + 0x01 -> ADD -> 0x00 (C=1)
 ;   上位: 0x01 + 0x00 -> ADC -> 0x02 (Cを引き継ぎ)
+RESULT_LO .equ 0x80
+RESULT_HI .equ 0x81
 
     ; --- 下位バイトの加算 ---
     LDA_IMM 0xFF    ; A = 下位 (0x01FF)
     LDB_IMM 0x01    ; B = 下位 (0x0001)
     ADD             ; A = 0x00, C = 1
-    STA_MEM 0x80    ; 結果の下位バイトを保存
+    STA_MEM RESULT_LO    ; 結果の下位バイトを保存
     
     ; --- 上位バイトの加算 (キャリー引継ぎ) ---
     LDA_IMM 0x01   ; A = 上位 (0x01FF)
     LDB_IMM 0x00   ; B = 上位 (0x0001)
     ADC            ; A = 0x02, C = 0
-    STA_MEM 0x81   ; 結果の上位バイトを保存
+    STA_MEM RESULT_HI   ; 結果の上位バイトを保存
 
     ; --- 結果の出力 ---
-    LDA_MEM 0x81
+    LDA_MEM RESULT_HI
     PRINTA         ; 上位バイトを出力 (0x02)
-    LDA_MEM 0x80
+    LDA_MEM RESULT_LO
     PRINTA         ; 下位バイトを出力 (0x00)
 
     ; -> 0x0200 = 512 を2バイトで表現
