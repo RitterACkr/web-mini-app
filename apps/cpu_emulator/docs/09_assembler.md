@@ -28,3 +28,34 @@ HALT
 
 1. 各行の命令サイズを数えてラベルのアドレスを確定
 2. 実際にバイト列を生成
+
+---
+
+## 疑似命令 (Pseudo Instruction)
+
+疑似命令はCPUが実行する命令ではなく,アセンブラが処理する特別な指示
+
+### .equ (定数定義)
+
+定数に名前を付けることができる
+```
+NAME .equ VALUE
+```
+
+- 可読性の工場
+- メンテナンス性の向上
+
+**書式:**
+- NAME: 英字またはアンダースコアで始まる識別子
+- VALUE: 10進数または16進数(0x...)
+
+**例:**
+```asm
+COUNTER .equ 0x80
+RESULT .equ 0x81
+
+LDA_IMM 5
+STA_MEM COUNTER
+LAD_MEM COUNTER
+STA_MEM RESULT
+```
