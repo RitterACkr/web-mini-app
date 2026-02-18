@@ -37,6 +37,7 @@
             <button id="run">Run</button>
             <button id="stop" disabled>Stop</button>
             <button id="reset">Reset</button>
+            <button id="helpToggle">Help</button>
         </div>
     </header>
 
@@ -84,6 +85,15 @@
             <h2>Trace</h2>
             <pre id="trace"></pre>
         </section>
+
+        <aside id="helpPanel" class="help-panel hidden">
+            <div class="help=header">
+                <h2>Instruction Set</h2>
+                <button id="helpClose">x</button>
+            </div>
+            <div id="helpContent" class="help-content">
+            </div>
+        </aside>
     </main>
 
     <script src="./main.js"></script>
