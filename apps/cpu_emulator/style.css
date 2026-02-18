@@ -177,6 +177,7 @@ textarea:focus {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     font-size: 12px;
     line-height: 1.35;
+    position: relative;
 }
 
 /* memory view cells */
@@ -203,6 +204,32 @@ textarea:focus {
 #mem .hi-write {
     outline: 1px solid rgba(90,169,255,0.55);
     background: rgba(90,169,255,0.15);
+}
+
+/* =========================================================
+   Memry Editor
+========================================================= */
+#mem .cell {
+    cursor: pointer;
+}
+#mem .cell:hover {
+    background: rgba(0,255,102,0.15);
+    outline: 1px solid rgba(0,255,102,0.4);
+}
+#mem .cell.editing {
+    visibility: hidden;
+}
+
+#memEdit {
+    background: var(--bg);
+    color: var(--fg);
+    border: 2px solid var(--fg);
+    border-radius: 4px;
+    padding: 2px 4px;
+    outline: none;
+    font-size: 12px;
+    box-shadow: 0 0 88px rgba(0,255,102,0.6);
+    z-index: 10;
 }
 
 /* =========================================================

@@ -759,7 +759,7 @@ function renderMemory(mem, pc, lastWrite) {
             if (addr === pc) cls += " hi-pc";
             if (lastWrite !== null && addr === lastWrite) cls += " hi-write";
 
-            cells.push(`<span class="${cls}">${hex2(b)}</span>`);
+            cells.push(`<span class="${cls}" data-addr="${addr}">${hex2(b)}</span>`);
         }
 
         const inLine = (pc >= base && pc < base + 16);
@@ -795,6 +795,88 @@ function render() {
 
     elTrace.textContent = cpu.trace.slice(-80).join("\n");
     elTrace.scrollTop = elTrace.scrollHeight;
+}
+
+// ==================
+// Memory Editor
+// ==================
+const elMemEdit = document.getElementById("memEdit");
+
+let editingAddr = null;
+
+elMem.addEventListener("click", (e) => {
+    const cell = e.target.closest(".cell");
+    if (!cell) return;
+
+    const addr = parseInt(cell.dataset.addr, 10);
+    if (!Number.isFinite(addr)) return;
+
+    startEditMemory(addr, cell);
+});
+
+function startEditMemory(addr, cellElement) {
+    editingAddr = addr;
+
+    // 編集中クラスを追加
+    cellElement.classList.add("editing");
+
+    // セルの位置を取得
+    const rect = cellElement.getBoundingClientRect();
+    const memRect = elMem.getBoundingClientRect();
+
+    // input要素を配置
+    elMemEdit.style.display = "block";
+    elMemEdit.style.left = (rect.left - memRect.left + elMem.scrollLeft) + "px";
+    elMemEdit.style.top = (rect.top - memRect.top + elMem.scrollTop) + "px";
+    elMemEdit.value = hex2(cpu.mem[addr]);
+
+    elMemEdit.focus();
+    elMemEdit.select();
+}
+
+elMemEdit.addEventListener("blur", () => {
+    // 編集中クラスを削除
+    document.querySelector("#mem .cell.editing")?.classList.remove("editing");
+
+    elMemEdit.style.display = "none";
+    editingAddr = null;
+});
+
+elMemEdit.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+        commitMemoryEdit();
+    } else if (e.key === "Escape") {
+        // 編集中クラスを削除
+        document.querySelector("#mem .cell.editing")?.classList.remove("editing");
+
+        elMemEdit.style.display = "none";
+        editingAddr = null;
+    }
+});
+
+function commitMemoryEdit() {
+    if (editingAddr === null) return;
+
+    const val = parseNumber(elMemEdit.value);
+
+    if (val === null || val < 0 || val > 255) {
+        // 編集中クラスを削除
+        document.querySelector("#mem .cell.editing")?.classList.remove("editing");
+
+        elMemEdit.style.display = "none";
+        editingAddr = null;
+        return;
+    }
+
+    cpu.mem[editingAddr] = val & 0xFF;
+    cpu.lastWrite = editingAddr;
+
+    // 編集中クラスを削除
+    document.querySelector("#mem .cell.editing")?.classList.remove("editing");
+
+    elMemEdit.style.display = "none";
+    editingAddr = null;
+    render();
 }
 
 
