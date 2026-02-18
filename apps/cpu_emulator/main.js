@@ -857,14 +857,26 @@ elMemEdit.addEventListener("keydown", (e) => {
 function commitMemoryEdit() {
     if (editingAddr === null) return;
 
-    const val = parseNumber(elMemEdit.value);
+    const input = elMemEdit.value.trim();
+
+    // 空入力はキャンセル
+    if (!input) {
+        cancelMemoryEdit();
+        return;
+    }
+
+    const val = parseNumber(input);
 
     if (val === null || val < 0 || val > 255) {
-        // 編集中クラスを削除
-        document.querySelector("#mem .cell.editing")?.classList.remove("editing");
+        // エラー表示
+        elMemEdit.classList.add("error");
+        elMemEdit.select();
 
-        elMemEdit.style.display = "none";
-        editingAddr = null;
+        // 0.3s後にエラー状態を解除
+        setTimeout(() => {
+            elMemEdit.classList.remove("error");
+        }, 300);
+
         return;
     }
 
@@ -877,6 +889,13 @@ function commitMemoryEdit() {
     elMemEdit.style.display = "none";
     editingAddr = null;
     render();
+}
+
+function cancelMemoryEdit() {
+    document.querySelector("#mem .cell.editing")?.classList.remove("editing");
+    elMemEdit.classList.remove("error");
+    elMemEdit.style.display = "none";
+    editingAddr = null;
 }
 
 
