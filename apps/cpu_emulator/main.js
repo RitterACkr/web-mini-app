@@ -30,6 +30,149 @@ const OP = {
 
 const OP_NAME = Object.fromEntries(Object.entries(OP).map(([k, v]) => [v, k]));
 
+const INSTRUCTION_REF = {
+    LDA_IMM: {
+        opcode: 0x01,
+        format: "LDA_IMM imm8",
+        desc: "Aレジスタに即値をロード",
+        detail: "A = value\nZ = (A == 0)",
+        example: "LDA_IMM 5  ; A=5\nLDA_IMM 0xFF  ; A=255"
+    },
+    LDB_IMM: {
+        opcode: 0x02,
+        format: "LDB_IMM imm8",
+        desc: "Bレジスタに即値をロード",
+        detail: "B = value\nZ = (B == 0)",
+        example: "LDB_IMM 10  ; B=10"
+    },
+    ADD: {
+        opcode: 0x03,
+        format: "ADD",
+        desc: "A と B を加算",
+        detail: "A = (A + B) & 0xFF\nC = キャリーフラグ\nZ = ゼロフラグ",
+        example: "LDA_IMM 10\nLDB_IMM 20\nADD   ; A = 30"
+    },
+    ADC: {
+        opcode: 0x08,
+        format: "ADC",
+        desc: "A と B と キャリー を加算",
+        detail: "A = (A + B + C) & 0xFF\nC = キャリーフラグ\nZ = ゼロフラグ",
+        example: "; 16bit加算の上位バイト\nADC      ; A = A + B + C"
+    },
+    PRINTA: {
+        opcode: 0x04,
+        format: "PRINTA",
+        desc: "Aレジスタの値を出力",
+        detail: "Output に A の値を追加",
+        example: "LDA_IMM 42\nPRINTA   ; Output: 42"
+    },
+    DEC_A: {
+        opcode: 0x05,
+        format: "DEC_A",
+        desc: "A を 1 減らす",
+        detail: "A = (A - 1) & 0xFF\nZ = (A == 0)",
+        example: "LDA_IMM 5\nDEC_A      ; A = 4"
+    },
+    CMP_A_IMM: {
+        opcode: 0x06,
+        format: "CMP_A_IMM value",
+        desc: "A と即値を比較 (Aは変更なし)",
+        detail: "r = (A - value) & 0xFF\nZ = (r == 0)",
+        example: "CMP_A_IMM 0\nJZ end   ; if A == 0 then jump to end"
+    },
+    SUB_A_IMM: {
+        opcode: 0x07,
+        format: "SUB_A_IMM value",
+        desc: "A から即値を減算",
+        detail: "A = (A - value) & 0xFF\nZ = (A == 0)",
+        example: "LDA_IMM 10\nSUB_A_IMM 3   ; A = 7"
+    },
+    JMP: {
+        opcode: 0x10,
+        format: "JMP addr",
+        desc: "無条件ジャンプ",
+        detail: "PC = addr",
+        example: "loop:\n   PRINTA\n    JMP loop    ; 無限ループ"
+    },
+    JZ: {
+        opcode: 0x11,
+        format: "JZ addr",
+        desc: "Z == 1 のときジャンプ",
+        detail: "if Z == 1 then PC = addr",
+        example: "CMP_A_IMM 0\nJZ end       ; if A == 0 then jump to end"
+    },
+    JNZ: {
+        opcode: 0x12,
+        format: "JNZ addr",
+        desc: "Z == 0 のときジャンプ",
+        detail: "if Z == 0 then PC = addr",
+        example: "DEC_A\nJNZ loop   ; if A != 0 then jump to loop"
+    },
+    LDA_MEM: {
+        opcode: 0x20,
+        format: "LDA_MEM addr",
+        desc: "メモリから A にロード",
+        detail: "A = mem[addr]\nZ = (A == 0)",
+        example: "LDA_MEM 0x80 ; A = mem[0x80]"
+    },
+    STA_MEM: {
+        opcode: 0x21,
+        format: "STA_MEM addr",
+        desc: "A をメモリにストア",
+        detail: "mem[addr] = A",
+        example: "LDA_IMM 42\nSTA_MEM 0x80 ; mem[0x80] = 42"
+    },
+    PUSH_A: {
+        opcode: 0x30,
+        format: "PUSH_A",
+        desc: "A をスタックに保存",
+        detail: "mem[SP] = A\nSP = SP - 1",
+        example: "LDA_IMM 10\nPUSH_A        ; スタックに保存"
+    },
+    POP_A: {
+        opcode: 0x31,
+        format: "POP_A",
+        desc: "スタックから A に復元",
+        detail: "SP = SP + 1\nA = mem[SP]\nZ = (A == 0)",
+        example: "POP_A     ; スタックから復元"
+    },
+    PUSH_B: {
+        opcode: 0x32,
+        format: "PUSH_B",
+        desc: "B をスタックに保存",
+        detail: "mem[SP] = B\nSP = SP - 1",
+        example: "LDB_IMM 10\nPUSH_B        ; スタックに保存"
+    },
+    POP_B: {
+        opcode: 0x33,
+        format: "POP_B",
+        desc: "スタックから B に復元",
+        detail: "SP = SP + 1\nB = mem[SP]\nZ = (B == 0)",
+        example: "POP_B"
+    },
+    CALL: {
+        opcode: 0x34,
+        format: "CALL addr",
+        desc: "サブルーチン呼び出し",
+        detail: "戻り先を保存してジャンプ\npush(PC)\nPC = addr",
+        example: "CALL func    ; func を呼び出し"
+    },
+    RET: {
+        opcode: 0x35,
+        format: "RET",
+        desc: "サブルーチンから復帰",
+        detail: "PC = pop()",
+        example: "func:\n  PRINTA\n  RET        ; 呼び出し元に戻る"
+    },
+    HALT: {
+        opcode: 0xFF,
+        format: "HALT",
+        desc: "CPU停止",
+        detail: "実行を停止",
+        example: "PRINTA\nHALT         ; 終了"
+    }
+};
+
 function hex2(n) {
     return n.toString(16).toUpperCase().padStart(2, "0");
 }
@@ -581,6 +724,12 @@ const btnStep = document.getElementById("step");
 const btnRun = document.getElementById("run");
 const btnStop = document.getElementById("stop");
 const btnReset = document.getElementById("reset");
+const btnHelpToggle = document.getElementById("helpToggle");
+
+// --- Help Panel ---
+const elHelpPanel = document.getElementById("helpPanel");
+const btnHelpClose = document.getElementById("helpClose");
+const elHelpContent = document.getElementById("helpContent");
 
 const cpu = new CPU();
 
@@ -889,6 +1038,31 @@ function render() {
 }
 
 // ==================
+// Help Panel
+// ==================
+function toggleHelpPanel() {
+    elHelpPanel.classList.toggle("hidden");
+}
+
+function renderHelpContent() {
+    const cards = Object.entries(INSTRUCTION_REF).map(([name, info]) => {
+        return `
+<div class="instr-card">
+    <div class="isntr-header">
+        <span class="instr-name">${name}</span>
+        <span class="instr-opcode">0x${hex2(info.opcode)}</span>
+    </div>
+    <div class="instr-format">${info.format}</div>
+    <div class="instr-desc">${info.desc}</div>
+    <div class="instr-detail">${info.detail}</div>
+    <div class="instr-example">${info.example}</div>
+</div>`.trim();
+    });
+
+    elHelpContent.innerHTML = cards.join('\n');
+}
+
+// ==================
 // Memory Editor
 // ==================
 const elMemEdit = document.getElementById("memEdit");
@@ -1107,6 +1281,14 @@ btnReset.addEventListener("click", () => {
     render();
 });
 
+btnHelpToggle.addEventListener("click", () => {
+    toggleHelpPanel();
+});
+
+btnHelpClose.addEventListener("click", () => {
+    elHelpPanel.classList.add("hidden");
+});
+
 elSampleSelect.addEventListener("change", () => {
     const key = elSampleSelect.value;
     if (!key) return;
@@ -1137,3 +1319,4 @@ renderBp();
 renderWp();
 renderSpeed();
 updateStepBackButton();
+renderHelpContent();
