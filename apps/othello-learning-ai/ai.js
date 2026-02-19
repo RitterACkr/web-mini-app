@@ -54,6 +54,37 @@ function boardToInput(board, color) {
     return [...mine, ...theirs, ...moves];
 }
 
+// NNでQ値を予測して手を選ぶ
+function selectAction(model, board, color, epsilon) {
+    const place = getAvailableMoves(board, color);
+    if (place.length === 0) return null;
+
+    // ε-greedy: ランダム探索
+    if (Math.random() < epsilon) {
+        return place[Math.floor(Math.random() * place.length)];
+    }
+
+    // NNでQ値を予測
+    const input = boardToInput(board, color);
+    const tensor = tf.tensor2d([input]);
+    const qVals = model.predict(tensor).dataSync();
+    tensor.dispose();
+
+    // 打てる手の中でQ値が最大の手を選ぶ
+    let bestMove = null;
+    let bestScore = -Infinity;
+
+    for (const [r, c] of place) {
+        const q = qVals[r * SIZE + c];
+        if (q > bestScore) {
+            bestScore = q;
+            bestMove = [r, c];
+        }
+    }
+
+    return bestMove;
+}
+
 
 // 動作確認
 const model = createModel();
@@ -63,3 +94,6 @@ console.log("NNモデル作成");
 const input = boardToInput(board, BLACK);
 console.log("入力ベクトル長: ", input.length);
 console.log("先頭16要素: ", input.slice(0, 16));
+
+const move = selectAction(model, board, BLACK, 0.0);
+console.log("AIが選んだ手: ", move);
