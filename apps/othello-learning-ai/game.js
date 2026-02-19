@@ -4,6 +4,12 @@ const BLACK = 1;
 const WHITE = 2;
 const SIZE = 8;
 
+const DIRS = [
+    [-1,-1], [-1, 0], [-1, 1],
+    [ 0,-1],          [ 0, 1],
+    [ 1,-1], [ 1, 0], [ 1, 1]
+];
+
 // 初期盤面を生成
 function createBoard() {
     const board = Array.from({ length: SIZE }, () => Array(SIZE).fill(EMPTY));
@@ -57,7 +63,49 @@ function drawBoard(canvas, board) {
     }
 }
 
+// 指定された手が次に打てる手かどうか判定
+function canPlace(board, row, col, color) {
+    if (board[row][col] !== EMPTY) return false;
+
+    const opp = color === BLACK ? WHITE : BLACK;
+
+    for (const [dr, dc] of DIRS) {
+        let r = row + dr;
+        let c = col + dc;
+        let count = 0;
+
+        while (r >= 0 && r < SIZE && c >= 0 && c < SIZE && board[r][c] === opp) {
+            r += dr;
+            c += dc;
+            count++;
+        }
+
+        // 1つ以上相手の石を挟んで自分の石があれば合法
+        if (count > 0 && r >= 0 && r < SIZE && c >= 0 && c < SIZE && board[r][c] === color) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// 次に打てる手の一覧を返す
+function getAvailableMoves(board, color) {
+    const moves = [];
+    for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+            if (canPlace(board, r, c, color)) moves.push([r, c]);
+        }
+    }
+
+    return moves;
+}
+
 // 初期描画
 const board = createBoard();
 const canvas = document.getElementById("board-canvas");
 drawBoard(canvas, board);
+
+
+// 動作確認
+console.log("黒の次に打てる手:", getAvailableMoves(board, BLACK));
