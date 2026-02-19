@@ -79,14 +79,14 @@ function canPlace(board, row, col, color) {
         let c = col + dc;
         let count = 0;
 
-        while (inBounds(row, col) && board[r][c] === opp) {
+        while (inBounds(r, c) && board[r][c] === opp) {
             r += dr;
             c += dc;
             count++;
         }
 
         // 1つ以上相手の石を挟んで自分の石があれば合法
-        if (count > 0 && inBounds(row, col) && board[r][c] === color) {
+        if (count > 0 && inBounds(r, c) && board[r][c] === color) {
             return true;
         }
     }
@@ -135,6 +135,36 @@ function applyMove(board, row, col, color) {
     return next;
 }
 
+// スコア計算
+function getScore(board) {
+    let black = 0;
+    let white = 0;
+    for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+            if (board[r][c] === BLACK) black++;
+            if (board[r][c] === WHITE) white++;
+        }
+    }
+
+    return { black, white };
+}
+
+// ゲームの終了判定
+function isGameOver(board) {
+    const blackMoves = getAvailableMoves(board, BLACK);
+    const whiteMoves = getAvailableMoves(board, WHITE);
+    return blackMoves.length === 0 && whiteMoves.length === 0;
+}
+
+// 勝者を返す
+function getWinner(board) {
+    const { black, white } = getScore(board);
+    if (black > white) return BLACK;
+    if (white > black) return WHITE;
+    return EMPTY;
+}
+
+
 // 初期描画
 const board = createBoard();
 const canvas = document.getElementById("board-canvas");
@@ -142,6 +172,5 @@ drawBoard(canvas, board);
 
 
 // 動作確認
-const after = applyMove(board, 2, 3, BLACK);
-drawBoard(canvas, board);
-console.log("結果: ", after);
+console.log("スコア:", getScore(board));
+console.log("ゲーム終了:", isGameOver(board));
