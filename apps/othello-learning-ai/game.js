@@ -63,6 +63,11 @@ function drawBoard(canvas, board) {
     }
 }
 
+// 指定された手が範囲内かどうか
+function inBounds(row, col) {
+    return row >= 0 && row < SIZE && col >= 0 && col < SIZE;
+}
+
 // 指定された手が次に打てる手かどうか判定
 function canPlace(board, row, col, color) {
     if (board[row][col] !== EMPTY) return false;
@@ -74,14 +79,14 @@ function canPlace(board, row, col, color) {
         let c = col + dc;
         let count = 0;
 
-        while (r >= 0 && r < SIZE && c >= 0 && c < SIZE && board[r][c] === opp) {
+        while (inBounds(row, col) && board[r][c] === opp) {
             r += dr;
             c += dc;
             count++;
         }
 
         // 1つ以上相手の石を挟んで自分の石があれば合法
-        if (count > 0 && r >= 0 && r < SIZE && c >= 0 && c < SIZE && board[r][c] === color) {
+        if (count > 0 && inBounds(row, col) && board[r][c] === color) {
             return true;
         }
     }
@@ -101,6 +106,35 @@ function getAvailableMoves(board, color) {
     return moves;
 }
 
+function applyMove(board, row, col, color) {
+    const opp = color === BLACK ? WHITE : BLACK;
+
+    // copy
+    const next = board.map(r => [...r]);
+    next[row][col] = color;
+
+    for (const [dr, dc] of DIRS) {
+        let r = row + dr;
+        let c = col + dc;
+        const toFlip = [];
+
+        while (inBounds(row, col) && next[r][c] === opp) {
+            toFlip.push([r, c]);
+            r += dr;
+            c += dc;
+        }
+
+        // 端が自分の石なら返す
+        if (toFlip.length > 0 && inBounds(row, col) && next[r][c] === color) {
+            for (const [fr, fc] of toFlip) {
+                next[fr][fc] = color;
+            }
+        }
+    }
+
+    return next;
+}
+
 // 初期描画
 const board = createBoard();
 const canvas = document.getElementById("board-canvas");
@@ -108,4 +142,6 @@ drawBoard(canvas, board);
 
 
 // 動作確認
-console.log("黒の次に打てる手:", getAvailableMoves(board, BLACK));
+const after = applyMove(board, 2, 3, BLACK);
+drawBoard(canvas, board);
+console.log("結果: ", after);
