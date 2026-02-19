@@ -113,9 +113,47 @@ function playOneGame(model, epsilon) {
     return { history, winner, finalBoard: board };
 }
 
+// 報酬の計算
+function getReward(winner, color) {
+    if (winner === color) return 1.0;   // 勝ち
+    if (winner === EMPTY) return 0.1;   // 引きわけ
+    return -1.0                         // 負け
+}
+
+// 1ゲーム分の履歴からモデルを更新
+async function trainOneGame(model, history, winner, gamma) {
+    for (const { board, color, move, nextBoard } of history) {
+        const reward = getReward(winner, color);
+        const input =  boardToInput(board, color);
+        const nextInput = boardToInput(nextBoard, color);
+
+        const qTensor = model.predict(tf.tensor2d([input]));
+        const qNext = model.predict(tf.tensor2d([nextInput]));
+
+        const qVals = qTensor.dataSync();
+        const qNextMax = Math.max(...qNext.dataSync());
+
+        // Q値を更新 ( Bellman方程式 )
+        const target = [...qVals];
+        const idx = move[0] * SIZE + move[1];
+        target[idx] = reward + gamma * qNextMax;
+
+        // 学習
+        await model.fit(
+            tf.tensor2d([input]),
+            tf.tensor2d([target]),
+            { epochs: 1, verbose: 0 }
+        );
+
+        tf.dispose([qTensor, qNext]);
+    }
+}
+
 
 // 動作確認
 const model = createModel();
-const game = playOneGame(model, 1.0);
-console.log("勝者:", game.winner === BLACK ? "黒" : game.winner === WHITE ? "白" : "引き分け");
-console.log("手数:", game.history.length);
+(async () => {
+    const game = playOneGame(model, 1.0);
+    await trainOneGame(model, game.history, game.winner, 0.95);
+    console.log("DQN更新OK");
+})();
