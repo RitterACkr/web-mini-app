@@ -118,14 +118,14 @@ function applyMove(board, row, col, color) {
         let c = col + dc;
         const toFlip = [];
 
-        while (inBounds(row, col) && next[r][c] === opp) {
+        while (inBounds(r, c) && next[r][c] === opp) {
             toFlip.push([r, c]);
             r += dr;
             c += dc;
         }
 
         // 端が自分の石なら返す
-        if (toFlip.length > 0 && inBounds(row, col) && next[r][c] === color) {
+        if (toFlip.length > 0 && inBounds(r, c) && next[r][c] === color) {
             for (const [fr, fc] of toFlip) {
                 next[fr][fc] = color;
             }
@@ -172,5 +172,3 @@ drawBoard(canvas, board);
 
 
 // 動作確認
-console.log("スコア:", getScore(board));
-console.log("ゲーム終了:", isGameOver(board));
