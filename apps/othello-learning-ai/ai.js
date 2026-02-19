@@ -85,15 +85,37 @@ function selectAction(model, board, color, epsilon) {
     return bestMove;
 }
 
+// 1ゲーム分の自己対戦を実行して履歴を返す
+function playOneGame(model, epsilon) {
+    let board = createBoard();
+    let color = BLACK;
+    const history = [];
+
+    while (!isGameOver(board)) {
+        const place = getAvailableMoves(board, color);
+
+        // パスの処理
+        if (place.length === 0) {
+            color = color === BLACK ? WHITE : BLACK;
+            continue;
+        }
+
+        const move = selectAction(model, board, color, epsilon);
+        const nextBoard = applyMove(board, move[0], move[1], color);
+
+        history.push({ board, color, move, nextBoard });
+
+        board = nextBoard;
+        color = color === BLACK ? WHITE : BLACK;
+    }
+
+    const winner = getWinner(board);
+    return { history, winner, finalBoard: board };
+}
+
 
 // 動作確認
 const model = createModel();
-model.summary();
-console.log("NNモデル作成");
-
-const input = boardToInput(board, BLACK);
-console.log("入力ベクトル長: ", input.length);
-console.log("先頭16要素: ", input.slice(0, 16));
-
-const move = selectAction(model, board, BLACK, 0.0);
-console.log("AIが選んだ手: ", move);
+const game = playOneGame(model, 1.0);
+console.log("勝者:", game.winner === BLACK ? "黒" : game.winner === WHITE ? "白" : "引き分け");
+console.log("手数:", game.history.length);
