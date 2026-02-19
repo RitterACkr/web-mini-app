@@ -150,6 +150,56 @@ async function trainOneGame(model, history, winner, gamma) {
 }
 
 
+// 学習状態の管理
+const trainingState = {
+    isRunning: false,
+    isPaused: false,
+    epoch: 0,
+    totalEpochs: 100,
+    epsilon: 0.3,
+    gamma: 0.95,
+    results: [],
+};
+
+// 学習ループ
+async function trainLoop(onEpochEnd) {
+    trainingState.isRunning = true;
+
+    while (trainingState.epoch < trainingState.totalEpochs) {
+        // 一時停止確認
+        if (trainingState.isPaused) {
+            await new Promise(r => setTimeout(r, 200));
+            continue;
+        }
+
+        const epsilon = trainingState.epsilon;
+        const gamma = trainingState.gamma;
+
+        // 1ゲーム実行 -> 学習
+        const game = playOneGame(model, epsilon);
+        await trainOneGame(model, game.history, game.winner, gamma);
+
+        trainingState.epoch++;
+        trainingState.results.push({
+            epoch: trainingState.epoch,
+            winner: game.winner,
+        });
+
+        // εを少しずつ減少
+        trainingState.epsilon = Math.max(0.05, trainingState.epsilon * 0.995);
+
+        // コールバックで外部に通知
+        if (onEpochEnd) onEpochEnd(trainingState, game.finalBoard);
+
+        // UIをブロックしないように少し待つ
+        await new Promise(r => setTimeout(r, 0));
+    }
+
+    trainingState.isRunning = false;
+    console.log("学習完了");
+}
+
+
 // 動作確認
 const model = createModel();
 (async () => {
