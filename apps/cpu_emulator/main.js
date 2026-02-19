@@ -932,8 +932,12 @@ function doAssemble() {
         cpu.history = [];
 
         render();
+
+        showToast(`✓ Assembled: ${PROGRAM.length} bytes`);
     } catch (e) {
         elAsmErr.textContent = String(e.message || e);
+
+        showToast(`✗ Assembly failed`, true);
     }
 }
 
@@ -942,6 +946,29 @@ function parseAddr(s) {
     if (!t) return null;
     const n = t.startsWith("0x") ? parseInt(t, 16) : parseInt(t, 10);
     return Number.isFinite(n) ? (n & 0xFF) : null;
+}
+
+// ==================
+// Toast Notification
+// ==================
+const elToast = document.getElementById("toast");
+let toastTimer = null;
+
+function showToast(message, isError = false) {
+    // 既存のタイマーをクリア
+    if (toastTimer) {
+        clearTimeout(toastTimer);
+    }
+
+    // トースト表示
+    elToast.textContent = message;
+    elToast.classList.toggle("error", isError);
+    elToast.classList.add("show");
+
+    // 2s後に非表示
+    toastTimer = setTimeout(() => {
+        elToast.classList.remove("show");
+    }, 2000);
 }
 
 
@@ -1313,6 +1340,18 @@ if (elSpeed) {
         restartTimerIfRunning();
     });
 }
+
+// ==================
+// Controls
+// ==================
+document.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        doAssemble();
+    }
+})
+
+
 
 doAssemble();
 renderBp();
