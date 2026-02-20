@@ -106,7 +106,10 @@ main {
     letter-spacing: 0.04em;
 }
 
-/* Layout: Training */
+
+/* ========================
+    Layout: Training 
+======================== */
 .layout-training {
     display: grid;
     grid-template-columns: auto 1fr;
@@ -115,6 +118,17 @@ main {
 }
 
 /* Control Panel */
+.right-col {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.chart-panel canvas {
+    width: 100%;
+    height: 200px;
+}
+
 .control-row {
     display: flex;
     justify-content: space-between;
@@ -245,4 +259,59 @@ main {
     text-align: center;
     font-size: 0.85rem;
     color: var(--text-muted);
+}
+
+
+/* ========================
+    Layout: Battle
+======================== */
+.layout-battle {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+/* Battle Score */
+.battle-score {
+    display: flex;
+    gap: 32px;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--accent2);
+    margin: 16px 0;
+}
+
+/* Color Select */
+.color-select p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.color-select label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+/* Battle Log */
+.battle-log {
+    margin-top: 16px;
+    height: 220px;
+    overflow-y: auto;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.battle-log p {
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
 }
