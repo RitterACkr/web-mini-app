@@ -327,3 +327,7 @@ main {
     border-radius: 8px;
     border: 1px solid var(--border);
 }
+
+.strength-panel {
+    margin-top: 20px;
+}

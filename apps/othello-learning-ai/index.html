@@ -131,10 +131,42 @@
             </div>
         </section>
 
+        <!-- NN 可視化 -->
         <section id="tab-network" class="tab-content" style="display: none;">
-            <div class="panel">
-                <h2>NNの表示</h2>
-                <canvas id="nn-canvas" width="900" height="500"></canvas>
+            <div class="panel nn-panel">
+                <h2>ニューラルネットワーク可視化</h2>
+                <canvas id="nn-canvas"></canvas>
+            </div>
+
+            <div class="panel strength-panel">
+                <h2>強さチェック</h2>
+                <p class="nn-desc">ランダムAIと100戦して勝率を測定します</p>
+                <div class="btn-group">
+                    <button id="btn-strength" class="btn btn-start">▶ 強さチェック開始</button>
+                </div>
+                <div id="strength-status" class="board-status">未測定</div>
+                <div class="progress-block">
+                    <div class="progress-label">
+                        <span>進行: <span id="strength-prog">0</span> / 100</span>
+                    </div>
+                    <div class="progress-bar-wrap">
+                        <div id="strength-bar" class="progress-bar"></div>
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">勝ち</div>
+                        <div id="strength-win" class="stat-val">—</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">負け</div>
+                        <div id="strength-lose" class="stat-val">—</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">引き分け</div>
+                        <div id="strength-draw" class="stat-val">—</div>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
