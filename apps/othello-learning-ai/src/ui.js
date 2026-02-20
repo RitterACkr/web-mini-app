@@ -74,9 +74,24 @@ function drawNetwork(canvas, activations = null, weights = null) {
     NN_LAYERS.forEach((n, l) => {
         const display = Math.min(n, MAX_NODES);
         nodeYs[l].forEach((y, j) => {
+            // 活性化値があれば色に反映
+            let fillColor = "#2a7a8c";
+            if (activations && activations[l]) {
+                const act = activations[l][j] || 0;
+                const intensity = Math.min(Math.abs(act), 1);
+                if (act > 0) {
+                    // 活性化 → 明るい青緑
+                    const g = Math.floor(120 + intensity * 100);
+                    fillColor = `rgb(30, ${g}, 140)`;
+                } else {
+                    // 不活性 → 暗くする
+                    fillColor = `rgb(20, 40, 60)`;
+                }
+            }
+
             ctx.beginPath();
-            ctx.arc(xs[l], y, 6, 0, Math.PI * 2);
-            ctx.fillStyle = "#2a7a8c";
+            ctx.arc(xs[l], y, 7, 0, Math.PI * 2);
+            ctx.fillStyle = fillColor
             ctx.fill();
             ctx.strokeStyle = "#5bb8c9";
             ctx.lineWidth = 1.5;
@@ -100,10 +115,10 @@ function drawNetwork(canvas, activations = null, weights = null) {
     });
 }
 
-function resizeAndDraw(weights = null) {
+function resizeAndDraw(weights = null, activations = null) {
     nnCanvas.width = nnCanvas.offsetWidth;
     nnCanvas.height = nnCanvas.offsetHeight;
-    drawNetwork(nnCanvas, null, weights);
+    drawNetwork(nnCanvas, activations, weights);
 }
 window.addEventListener("resize", () => resizeAndDraw());
 
@@ -118,6 +133,31 @@ function extractWeights(model) {
         result.push(kernel);
     }
 
+    return result;
+}
+
+// 盤面からノードの活性化値を取得
+function extractActivations(model, board, color) {
+    const input = boardToInput(board, color);
+    const inputT = tf.tensor2d([input]);
+
+    const result = [];
+
+    // 入力層
+    result.push(Array.from(input.slice(0, 16)));
+
+    // 各中間層の出力を取得
+    for (let i = 0; i < model.layers.length; i++) {
+        const subModel = tf.model({
+            inputs: model.inputs,
+            outputs: model.layers[i].output
+        });
+        const out = subModel.predict(inputT);
+        result.push(Array.from(out.dataSync()));
+        tf.dispose(out);
+    }
+
+    tf.dispose(inputT);
     return result;
 }
 

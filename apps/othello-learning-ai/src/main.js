@@ -15,7 +15,8 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
         // View NN を開いたときの処理
         if (btn.dataset.tab === "network") {
             const w = extractWeights(model);
-            resizeAndDraw(w);
+            const acts = extractActivations(model, createBoard(), BLACK);
+            resizeAndDraw(w, acts);
         }
     })
 });
@@ -148,7 +149,8 @@ function onEpochEnd(state, finalBoard) {
     // 10 epochごとに View NN を更新
     if (state.epoch % 10 === 0) {
         const w = extractWeights(model);
-        resizeAndDraw(w);
+        const acts = extractActivations(model, finalBoard, BLACK);
+        resizeAndDraw(w, acts);
     }
 }
 
