@@ -219,7 +219,7 @@ main {
     margin-top: 14px;
 }
 
-.stats-card {
+.stat-card {
     background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 8px;
