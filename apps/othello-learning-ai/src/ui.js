@@ -6,7 +6,7 @@ const nnCanvas = document.getElementById("nn-canvas");
 const NN_LAYERS = [16, 128, 64, 64];
 const LAYER_LABELS = ["Input", "Hidden 1", "Hidden 2", "Output"];
 
-function drawNetwork(canvas, activations = null) {
+function drawNetwork(canvas, activations = null, weights = null) {
     const ctx = canvas.getContext("2d");
     const W = canvas.width;
     const H = canvas.height;
@@ -14,7 +14,7 @@ function drawNetwork(canvas, activations = null) {
     ctx.clearRect(0, 0, W, H);
 
     // 背景
-    ctx.fillStyle = "0e1520";
+    ctx.fillStyle = "#0e1520";
     ctx.fillRect(0, 0, W, H);
 
     const layerCount = NN_LAYERS.length;
@@ -36,16 +36,35 @@ function drawNetwork(canvas, activations = null) {
 
     // エッジを描画
     for (let l = 0; l < layerCount - 1; l++) {
-        for (const y1 of nodeYs[l]) {
-            for (const y2 of nodeYs[l + 1]) {
+        // weightsがあれば使う, なければデフォルト
+        const layerWeights = weights ? weights[l] : null;
+
+        nodeYs[l].forEach((y1, ni) => {
+            nodeYs[l + 1].forEach((y2, nj) => {
+                let color = "rgba(42, 122, 140, 0.15)";
+
+                if (layerWeights) {
+                    const idx = ni * Math.min(NN_LAYERS[l + 1], MAX_NODES) + nj;
+                    const w = layerWeights[idx] || 0;
+                    const intensity = Math.min(Math.abs(w), 1);
+
+                    if (w > 0) {
+                        // 正の重み → 青
+                        color = `rgba(91, 184, 201, ${intensity * 0.6})`;
+                    } else {
+                        // 負の重み → 赤
+                        color = `rgba(220, 80, 80, ${intensity * 0.6})`;
+                    }
+                }
+
                 ctx.beginPath();
                 ctx.moveTo(xs[l], y1);
                 ctx.lineTo(xs[l + 1], y2);
-                ctx.strokeStyle = "rgba(42, 122, 140, 0.15)";
-                ctx.lineWidth = 0.5;
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 0.8;
                 ctx.stroke();
-            }
-        }
+            });
+        });
     }
 
     // ノードを描画
@@ -63,7 +82,7 @@ function drawNetwork(canvas, activations = null) {
 
         // 省略記号
         if (n > MAX_NODES) {
-            ctx.fillStyle = "#7a79aaa";
+            ctx.fillStyle = "#7a9aaa";
             ctx.font = "12px sans-serif";
             ctx.textAlign = "center";
             ctx.fillText("...", xs[l], H / 2);
