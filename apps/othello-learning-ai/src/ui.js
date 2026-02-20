@@ -42,18 +42,21 @@ function drawNetwork(canvas, activations = null, weights = null) {
         nodeYs[l].forEach((y1, ni) => {
             nodeYs[l + 1].forEach((y2, nj) => {
                 let color = "rgba(42, 122, 140, 0.15)";
+                let lineWidth = 1.2;
 
                 if (layerWeights) {
                     const idx = ni * Math.min(NN_LAYERS[l + 1], MAX_NODES) + nj;
                     const w = layerWeights[idx] || 0;
-                    const intensity = Math.min(Math.abs(w), 1);
+                    const intensity = Math.min(Math.abs(w) * 2, 1);
+
+                    lineWidth = 0.8 + intensity * 2.0;
 
                     if (w > 0) {
                         // 正の重み → 青
-                        color = `rgba(91, 184, 201, ${intensity * 0.6})`;
+                        color = `rgba(91, 184, 201, ${0.1 + intensity * 0.7})`;
                     } else {
                         // 負の重み → 赤
-                        color = `rgba(220, 80, 80, ${intensity * 0.6})`;
+                        color = `rgba(220, 80, 80, ${0.1 + intensity * 0.7})`;
                     }
                 }
 
@@ -61,7 +64,7 @@ function drawNetwork(canvas, activations = null, weights = null) {
                 ctx.moveTo(xs[l], y1);
                 ctx.lineTo(xs[l + 1], y2);
                 ctx.strokeStyle = color;
-                ctx.lineWidth = 0.8;
+                ctx.lineWidth = lineWidth;
                 ctx.stroke();
             });
         });
@@ -97,5 +100,27 @@ function drawNetwork(canvas, activations = null, weights = null) {
     });
 }
 
+function resizeAndDraw(weights = null) {
+    nnCanvas.width = nnCanvas.offsetWidth;
+    nnCanvas.height = nnCanvas.offsetHeight;
+    drawNetwork(nnCanvas, null, weights);
+}
+window.addEventListener("resize", () => resizeAndDraw());
+
+// モデルから重みを取り出す
+function extractWeights(model) {
+    const result = [];
+    const layerWeights = model.getWeights();
+
+    // 各層のカーネル (重み行列) だけ取り出す
+    for (let i = 0; i < layerWeights.length; i += 2) {
+        const kernel = layerWeights[i].dataSync();
+        result.push(kernel);
+    }
+
+    return result;
+}
+
+
 // 初期描画
-drawNetwork(nnCanvas);
+resizeAndDraw();
