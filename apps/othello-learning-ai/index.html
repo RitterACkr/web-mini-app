@@ -20,6 +20,7 @@
     </nav>
 
     <main>
+        <!-- 学習モード -->
         <section id="tab-training" class="tab-content active">
             <div class="layout-training">
 
@@ -29,65 +30,100 @@
                     <div id="board-status" class="board-status">ready...</div>
                 </div>
 
-                <div class="panel control-panel">
-                    <h2>学習設定</h2>
+                <div class="right-col">
+                    <div class="panel control-panel">
+                        <h2>学習設定</h2>
 
-                    <div class="control-row">
-                        <label>epoch数</label>
-                        <input id="epoch-input" type="number" value="100" min="1" max="10000" />
-                    </div>
-                    <div class="control-row">
-                        <label>学習率 (α)</label>
-                        <input id="lr-input" type="number" value="0.001" step="0.0001" min="0.0001" />
-                    </div>
-                    <div class="control-row">
-                        <label>ε-greedy</label>
-                        <input id="epsilon-input" type="number" value="0.3" step="0.01" min="0" max="1" />
-                    </div>
-                    <div class="control-row">
-                        <label>割引率 (γ)</label>
-                        <input id="gamma-input" type="number" value="0.95" step="0.01" min="0" max="1" />
+                        <div class="control-row">
+                            <label>epoch数</label>
+                            <input id="epoch-input" type="number" value="100" min="1" max="10000" />
+                        </div>
+                        <div class="control-row">
+                            <label>学習率 (α)</label>
+                            <input id="lr-input" type="number" value="0.001" step="0.0001" min="0.0001" />
+                        </div>
+                        <div class="control-row">
+                            <label>ε-greedy</label>
+                            <input id="epsilon-input" type="number" value="0.3" step="0.01" min="0" max="1" />
+                        </div>
+                        <div class="control-row">
+                            <label>割引率 (γ)</label>
+                            <input id="gamma-input" type="number" value="0.95" step="0.01" min="0" max="1" />
+                        </div>
+
+                        <div class="btn-group">
+                            <button id="btn-start" class="btn btn-start">学習開始</button>
+                            <button id="btn-pause" class="btn btn-pause" disabled>一時停止</button>
+                            <button id="btn-reset" class="btn btn-reset">リセット</button>
+                        </div>
+
+                        <div class="progress-block">
+                            <div class="progress-label">
+                                <span>進行: <span id="prog-epoch">0</span> / <span id="prog-total">100</span></span>
+                                <span id="prog-pct">0%</span>
+                            </div>
+                            <div class="progress-bar-wrap">
+                                <div id="progress-bar" class="progress-bar"></div>
+                            </div>
+                        </div>
+
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-label">⚫黒 勝率</div>
+                                <div id="stat-black" class="stat-val">—</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">⚪白 勝率</div>
+                                <div id="stat-white" class="stat-val">—</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">引き分け</div>
+                                <div id="stat-draw" class="stat-val">—</div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="btn-group">
-                        <button id="btn-start" class="btn btn-start">学習開始</button>
-                        <button id="btn-pause" class="btn btn-pause" disabled>一時停止</button>
-                        <button id="btn-reset" class="btn btn-reset">リセット</button>
-                    </div>
-
-                    <div class="progress-block">
-                        <div class="progress-label">
-                            <span>進行: <span id="prog-epoch">0</span> / <span id="prog-total">100</span></span>
-                            <span id="prog-pct">0%</span>
-                        </div>
-                        <div class="progress-bar-wrap">
-                            <div id="progress-bar" class="progress-bar"></div>
-                        </div>
-                    </div>
-
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-label">⚫黒 勝率</div>
-                            <div id="stat-black" class="stat-val">—</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">⚪白 勝率</div>
-                            <div id="stat-white" class="stat-val">—</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">引き分け</div>
-                            <div id="stat-draw" class="stat-val">—</div>
-                        </div>
+                    <div class="panel chart-panel">
+                        <h2>勝率推移 (直近50ゲーム)</h2>
+                        <canvas id="chart-canvas" width="100" height="200"></canvas>
                     </div>
                 </div>
 
             </div>
         </section>
 
-        <section id="tab-battle" class="tab-content" style="display: none;">
-            <div class="panel">
-                <h2>対戦モード</h2>
-                <canvas id="battle-canvas" width="400" height="400"></canvas>
+        <!-- 対戦モード -->
+        <section id="tab-battle" class="tab-content">
+            <div class="layout-battle">
+
+                <div class="panel board-panel">
+                    <h2>対戦モード</h2>
+                    <canvas id="battle-canvas" width="400" height="400"></canvas>
+                    <div id="battle-status" class="board-status">学習を完了してから対戦してください</div>
+                </div>
+
+                <div class="panel battle-info-panel">
+                    <h2>対戦情報</h2>
+
+                    <div class="battle-score">
+                        <span>⚫ <span id="score-black">2</span></span>
+                        <span>⚪ <span id="score-white">2</span></span>
+                    </div>
+
+                    <div class="color-select">
+                        <p>プレイヤーの色を選択</p>
+                        <label><input type="radio" name="player-color" value="black" checked /> ⚫ 黒（先手）</label>
+                        <label><input type="radio" name="player-color" value="white" /> ⚪ 白（後手）</label>
+                    </div>
+
+                    <div class="btn-group">
+                        <button id="btn-battle-start" class="btn btn-start">▶ 対戦開始</button>
+                        <button id="btn-battle-reset" class="btn btn-reset">リセット</button>
+                    </div>
+
+                    <div id="battle-log" class="battle-log"></div>
+                </div>
+
             </div>
         </section>
 

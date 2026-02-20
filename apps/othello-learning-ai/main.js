@@ -21,15 +21,20 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 const btnStart = document.getElementById("btn-start");
 const btnPause = document.getElementById("btn-pause");
 const btnReset = document.getElementById("btn-reset");
+
 const progBar = document.getElementById("progress-bar");
 const progEpoch = document.getElementById("prog-epoch");
 const progTotal = document.getElementById("prog-total");
 const progPct = document.getElementById("prog-pct");
+
 const statBlack = document.getElementById("stat-black");
 const statWhite = document.getElementById("stat-white");
 const statDraw = document.getElementById("stat-draw");
+
 const boardStatus = document.getElementById("board-status");
 const boardCanvas = document.getElementById("board-canvas");
+
+const chartCanvas = document.getElementById("chart-canvas");
 
 // 学習開始
 btnStart.addEventListener("click", () => {
@@ -107,4 +112,90 @@ function onEpochEnd(state, finalBoard) {
         btnPause.disabled = true;
         boardStatus.textContent = "学習完了";
     }
+
+    drawChart(state.results);
+}
+
+// チャートの描画
+function drawChart(results) {
+    const ctx = chartCanvas.getContext("2d");
+    const w = chartCanvas.offsetWidth;
+    const h = chartCanvas.offsetHeight;
+    chartCanvas.width = w;
+    chartCanvas.height = h;
+
+    ctx.clearRect(0, 0, w, h);
+
+    // 背景
+    ctx.fillStyle = "#0e1520";
+    ctx.fillRect(0, 0, w, h);
+
+    if (results.length < 2) return;
+
+    // 10ゲームごとの勝率を集計
+    const buckets = [];
+    const step = 10;
+    for (let i = step; i <= results.length; i += step) {
+        const slice = results.slice(i - step, i);
+        const n = slice.length;
+        buckets.push({
+            epoch: i,
+            black: slice.filter(r => r.winner === BLACK).length / n,
+            white: slice.filter(r => r.winner === WHITE).length / n,
+            draw: slice.filter(r => r.winner === EMPTY).length / n,
+        });
+    }
+
+    if (buckets.length < 2) return;
+
+    const padL = 40, padR = 16, padT = 16, padB = 30;
+    const gw = w - padL - padR;
+    const gh = h - padT - padB;
+
+    // grid
+    ctx.strokeStyle = "#1e3048";
+    ctx.lineWidth = 1;
+    [0, 0.25, 0.5, 0.75, 1.0].forEach(v => {
+        const y = padT + gh * (1 - v);
+        ctx.beginPath();
+        ctx.moveTo(padL, y);
+        ctx.lineTo(padL + gw, y);
+        ctx.stroke();
+
+        ctx.fillStyle = "#7a9aaa";
+        ctx.font = "10px sans-serif";
+        ctx.fillText((v * 100).toFixed(0) + "%", 2, y + 4);
+    });
+
+    // 折れ線の表示
+    const lines = [
+        { key: "black", color: "#5bb8c9" },
+        { key: "white", color: "#e8ede6" },
+        { key: "draw", color: "#c8a060" },
+    ];
+
+    lines.forEach(({ key, color }) => {
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+
+        buckets.forEach((b, i) => {
+            const x = padL + (i / (buckets.length - 1)) * gw;
+            const y = padT + gh * (1 - b[key]);
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+    });
+
+    // 凡例
+    const legend = [
+        { label: "⚫黒", color: "#5bb8c9" },
+        { label: "⚪白", color: "#e8ede6" },
+        { label: "引き分け", color: "#c8a060" },
+    ];
+    legend.forEach(({ label, color }, i) => {
+        ctx.fillStyle = color;
+        ctx.font = "11px sans-serif";
+        ctx.fillText(label, padL + i * 80, h - 6);
+    });
 }
