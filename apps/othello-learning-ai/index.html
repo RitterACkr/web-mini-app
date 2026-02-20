@@ -50,6 +50,10 @@
                             <label>割引率 (γ)</label>
                             <input id="gamma-input" type="number" value="0.95" step="0.01" min="0" max="1" />
                         </div>
+                        <div class="control-row">
+                            <label>snapshot更新間隔</label>
+                            <input id="snapshot-input" type="number" value="20" min="1" max="1000" />
+                        </div>
 
                         <div class="btn-group">
                             <button id="btn-start" class="btn btn-start">学習開始</button>
@@ -69,12 +73,12 @@
 
                         <div class="stats-grid">
                             <div class="stat-card">
-                                <div class="stat-label">⚫黒 勝率</div>
-                                <div id="stat-black" class="stat-val">—</div>
+                                <div class="stat-label">mainモデル 勝率</div>
+                                <div id="stat-main" class="stat-val">—</div>
                             </div>
                             <div class="stat-card">
-                                <div class="stat-label">⚪白 勝率</div>
-                                <div id="stat-white" class="stat-val">—</div>
+                                <div class="stat-label">相手モデル 勝率</div>
+                                <div id="stat-opp" class="stat-val">—</div>
                             </div>
                             <div class="stat-card">
                                 <div class="stat-label">引き分け</div>

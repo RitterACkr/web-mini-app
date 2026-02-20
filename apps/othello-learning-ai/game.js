@@ -166,9 +166,4 @@ function getWinner(board) {
 
 
 // 初期描画
-const board = createBoard();
-const canvas = document.getElementById("board-canvas");
-drawBoard(canvas, board);
-
-
-// 動作確認
+drawBoard(document.getElementById("board-canvas"), createBoard());

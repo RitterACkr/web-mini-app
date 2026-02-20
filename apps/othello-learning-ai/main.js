@@ -1,6 +1,3 @@
-// モデルの初期化
-const model = createModel();
-
 // タブの切り替え
 document.querySelectorAll(".tab-btn").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -28,8 +25,8 @@ const progEpoch = document.getElementById("prog-epoch");
 const progTotal = document.getElementById("prog-total");
 const progPct = document.getElementById("prog-pct");
 
-const statBlack = document.getElementById("stat-black");
-const statWhite = document.getElementById("stat-white");
+const statMain = document.getElementById("stat-main");
+const statOpp = document.getElementById("stat-opp");
 const statDraw = document.getElementById("stat-draw");
 
 const boardStatus = document.getElementById("board-status");
@@ -64,6 +61,7 @@ btnStart.addEventListener("click", () => {
     trainingState.totalEpochs = parseInt(document.getElementById("epoch-input").value);
     trainingState.epsilon = parseFloat(document.getElementById("epsilon-input").value);
     trainingState.gamma = parseFloat(document.getElementById("gamma-input").value);
+    trainingState.snapshotInterval = parseInt(document.getElementById("snapshot-input").value);
     trainingState.epoch = 0;
     trainingState.results = [];
     trainingState.isPaused = false;
@@ -97,8 +95,8 @@ btnReset.addEventListener("click", () => {
     progBar.style.width = "0%";
     progEpoch.textContent = "0";
     progPct.textContent = "0%";
-    statBlack.textContent = "—";
-    statWhite.textContent = "—";
+    statMain.textContent = "—";
+    statOpp.textContent = "—";
     statDraw.textContent = "—";
     boardStatus.textContent = "ready...";
 
@@ -114,16 +112,20 @@ function onEpochEnd(state, finalBoard) {
 
     // 直近50ゲームの勝率を計算
     const recent = state.results.slice(-50);
-    const bWin = recent.filter(r => r.winner === BLACK).length;
-    const wWin = recent.filter(r => r.winner === WHITE).length;
-    const draw = recent.filter(r => r.winner === EMPTY).length;
     const n = recent.length;
 
-    statBlack.textContent = (bWin / n * 100).toFixed(0) + "%";
-    statWhite.textContent = (wWin / n * 100).toFixed(0) + "%";
+    // メインモデルが勝った割合で集計
+    const mainWin = recent.filter(r => r.winner === r.mainColor).length;
+    const oppWin = recent.filter(r => r.winner !== r.mainColor && r.winner !== EMPTY).length;
+    const draw = recent.filter(r => r.winner === EMPTY).length;
+
+    statMain.textContent = (mainWin / n * 100).toFixed(0) + "%";
+    statOpp.textContent = (oppWin / n * 100).toFixed(0) + "%";
     statDraw.textContent = (draw / n * 100).toFixed(0) + "%";
 
-    boardStatus.textContent = `Epoch ${state.epoch} / ε=${state.epsilon.toFixed(3)}`;
+    // snapshotタイミングを表示
+    const nextSnap = state.snapshotInterval - (state.epoch % state.snapshotInterval);
+    boardStatus.textContent = `Epoch ${state.epoch} / ε=${state.epsilon.toFixed(3)} / 次のsnapshot: ${nextSnap}後`;
 
     // 盤面を更新
     drawBoard(boardCanvas, finalBoard);
@@ -162,8 +164,8 @@ function drawChart(results) {
         const n = slice.length;
         buckets.push({
             epoch: i,
-            black: slice.filter(r => r.winner === BLACK).length / n,
-            white: slice.filter(r => r.winner === WHITE).length / n,
+            mainWin: slice.filter(r => r.winner === r.mainColor).length / n,
+            oppWin: slice.filter(r => r.winner !== r.mainColor && r.winner !== EMPTY).length / n,
             draw: slice.filter(r => r.winner === EMPTY).length / n,
         });
     }
@@ -191,9 +193,9 @@ function drawChart(results) {
 
     // 折れ線の表示
     const lines = [
-        { key: "black", color: "#5bb8c9" },
-        { key: "white", color: "#e8ede6" },
-        { key: "draw", color: "#c8a060" },
+        { key: "mainWin", color: "#5bb8c9", label: "Main Model" },
+        { key: "oppWin", color: "#e8ede6", label: "Snapshot Model" },
+        { key: "draw", color: "#c8a060", label: "Draw" },
     ];
 
     lines.forEach(({ key, color }) => {
@@ -210,15 +212,10 @@ function drawChart(results) {
     });
 
     // 凡例
-    const legend = [
-        { label: "⚫黒", color: "#5bb8c9" },
-        { label: "⚪白", color: "#e8ede6" },
-        { label: "引き分け", color: "#c8a060" },
-    ];
-    legend.forEach(({ label, color }, i) => {
+    lines.forEach(({ label, color }, i) => {
         ctx.fillStyle = color;
         ctx.font = "11px sans-serif";
-        ctx.fillText(label, padL + i * 80, h - 6);
+        ctx.fillText(label, padL + i * 90, h - 6);
     });
 }
 
