@@ -165,7 +165,7 @@ const trainingState = {
 async function trainLoop(onEpochEnd) {
     trainingState.isRunning = true;
 
-    while (trainingState.epoch < trainingState.totalEpochs) {
+    while (trainingState.isRunning && trainingState.epoch < trainingState.totalEpochs) {
         // 一時停止確認
         if (trainingState.isPaused) {
             await new Promise(r => setTimeout(r, 200));
@@ -201,9 +201,3 @@ async function trainLoop(onEpochEnd) {
 
 
 // 動作確認
-const model = createModel();
-(async () => {
-    const game = playOneGame(model, 1.0);
-    await trainOneGame(model, game.history, game.winner, 0.95);
-    console.log("DQN更新OK");
-})();
