@@ -11,6 +11,12 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
         });
         const target = document.getElementById("tab-" + btn.dataset.tab);
         if (target) target.style.display = "block";
+
+        // View NN を開いたときの処理
+        if (btn.dataset.tab === "network") {
+            const w = extractWeights(model);
+            resizeAndDraw(w);
+        }
     })
 });
 
@@ -138,6 +144,12 @@ function onEpochEnd(state, finalBoard) {
     }
 
     drawChart(state.results);
+
+    // 10 epochごとに View NN を更新
+    if (state.epoch % 10 === 0) {
+        const w = extractWeights(model);
+        resizeAndDraw(w);
+    }
 }
 
 // チャートの描画
