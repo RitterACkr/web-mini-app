@@ -105,3 +105,144 @@ main {
     margin-bottom: 16px;
     letter-spacing: 0.04em;
 }
+
+/* Layout: Training */
+.layout-training {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+/* Control Panel */
+.control-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.control-row label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.control-row input[type="number"] {
+    width: 100px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 10px;
+    color: var(--text);
+    font-size: 0.9rem;
+    text-align: right;
+}
+.control-row input:focus {
+    outline: none;
+    border-color: var(--accent1);
+}
+
+/* Buttons */
+.btn-group {
+    display: flex;
+    gap: 8px;
+    margin: 16px 0;
+}
+
+.btn {
+    flex: 1;
+    padding: 9px 0;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+}
+.btn:active {
+    transform: scale(0.97);
+}
+.btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-start {
+    background: linear-gradient(135deg, #2a7a4a, #1a5a3a);
+    color: #fff;
+}
+
+.btn-pause {
+    background: linear-gradient(135deg, var(--accent3), #c8a060);
+    color: #1a1a1a;
+}
+
+.btn-reset {
+    background: linear-gradient(135deg, #3a4a5a, #2a3a4a);
+    color: #fff;
+}
+
+/* Progress */
+.progress-block {
+    margin: 14px 0;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.progress-bar-wrap {
+    background: var(--bg);
+    border-radius: 99px;
+    height: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent1), var(--accent2));
+    border-radius: 99px;
+    transition: width 0.3s ease;
+}
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.stats-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 8px;
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.stat-val {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--accent2);
+}
+
+/* Board Status */
+.board-status {
+    margin-top: 10px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
