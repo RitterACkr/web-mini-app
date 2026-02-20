@@ -388,3 +388,69 @@ btnBattleReset.addEventListener("click", () => {
     scoreWhite.textContent = "2";
     battleLog.innerHTML = "";
 });
+
+// =========================
+// View NN
+// =========================
+const btnStrength = document.getElementById("btn-strength");
+const strengthStatus = document.getElementById("strength-status");
+const strengthBar = document.getElementById("strength-bar");
+const strengthProg = document.getElementById("strength-prog");
+const strengthWin = document.getElementById("strength-win");
+const strengthLose = document.getElementById("strength-lose");
+const strengthDraw = document.getElementById("strength-draw");
+
+btnStrength.addEventListener("click", async () => {
+    btnStrength.disabled = true;
+    strengthStatus.textContent = "測定中...";
+
+    const GAMES = 100;
+    let win = 0, lose = 0, draw = 0;
+
+    for (let i = 0; i < GAMES; i++) {
+        // ランダムAIとの対戦
+        const mainColor = i % 2 === 0 ? BLACK : WHITE;
+        let board = createBoard();
+        let color = BLACK;
+
+        while(!isGameOver(board)) {
+            const place = getAvailableMoves(board, color);
+            if (place.length === 0) {
+                color = color === BLACK ? WHITE : BLACK;
+                continue;
+            }
+
+            let move;
+            if (color === mainColor) {
+                // メインモデル
+                move = selectAction(model, board, color, 0.0);
+            } else {
+                move = place[Math.floor(Math.random() * place.length)];
+            }
+
+            board = applyMove(board, move[0], move[1], color);
+            color = color === BLACK ? WHITE : BLACK;
+        }
+
+        const winner = getWinner(board);
+        if (winner === mainColor) win++;
+        else if (winner === EMPTY) draw++;
+        else lose++;
+
+        // 10戦ごとにUI更新
+        if ((i + 1) % 10 === 0) {
+            const pct = Math.round((i + 1) / GAMES * 100);
+            strengthBar.style.width = pct + "%";
+            strengthProg.textContent = i + 1;
+            strengthWin.textContent = win;
+            strengthLose.textContent = lose;
+            strengthDraw.textContent = draw;
+
+            await new Promise(r => setTimeout(r, 0));
+        }
+    }
+
+    const winRate = (win / GAMES * 100).toFixed(1);
+    strengthStatus.textContent = `測定完了! ランダムAIに対する勝率: ${winRate}%`;
+    btnStrength.disabled = false;
+})
