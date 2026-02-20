@@ -18,6 +18,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 });
 
 // UI要素
+/* Training Mode */
 const btnStart = document.getElementById("btn-start");
 const btnPause = document.getElementById("btn-pause");
 const btnReset = document.getElementById("btn-reset");
@@ -35,6 +36,27 @@ const boardStatus = document.getElementById("board-status");
 const boardCanvas = document.getElementById("board-canvas");
 
 const chartCanvas = document.getElementById("chart-canvas");
+
+/* Battle Mode */
+const battleCanvas = document.getElementById("battle-canvas");
+const battleStatus = document.getElementById("battle-status");
+const battleLog = document.getElementById("battle-log");
+const scoreBlack = document.getElementById("score-black");
+const scoreWhite = document.getElementById("score-white");
+const btnBattleStart = document.getElementById("btn-battle-start");
+const btnBattleReset = document.getElementById("btn-battle-reset");
+
+const battleState = {
+    board: null,
+    playerColor: BLACK,
+    aiColor: WHITE,
+    currentTurn: BLACK,
+    isRunning: false,
+};
+
+// =========================
+// Training Mode
+// =========================
 
 // 学習開始
 btnStart.addEventListener("click", () => {
@@ -199,3 +221,159 @@ function drawChart(results) {
         ctx.fillText(label, padL + i * 80, h - 6);
     });
 }
+
+
+// =========================
+// Battle Mode
+// =========================
+
+// ログに追記
+function addLog(msg) {
+    const p = document.createElement("p");
+    p.textContent = msg;
+    battleLog.prepend(p);
+}
+
+// スコア表示を更新
+function updateBattleScore(board) {
+    const { black, white } = getScore(board);
+    scoreBlack.textContent = black;
+    scoreWhite.textContent = white;
+}
+
+// 打てる手をハイライト
+function drawBattleBoard(board, canMoves) {
+    drawBoard(battleCanvas, board);
+    const ctx = battleCanvas.getContext("2d");
+    const cell = battleCanvas.width / SIZE;
+
+    canMoves.forEach(([r, c]) => {
+        const x = c * cell + cell / 2;
+        const y = r * cell + cell / 2;
+        ctx.beginPath();
+        ctx.arc(x, y, cell * 0.2, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(91,184,201,0.5)";
+        ctx.fill();
+    });
+}
+
+// AIのターンを処理
+async function doAiTurn() {
+    await new Promise(r => setTimeout(r, 400));
+
+    const place = getAvailableMoves(battleState.board, battleState.aiColor);
+    if (place.length === 0) {
+        addLog("AIはパスしました");
+        battleState.currentTurn = battleState.playerColor;
+        doPlayerTurn();
+        return;
+    }
+
+    const move = selectAction(model, battleState.board, battleState.aiColor, 0.0);
+    battleState.board = applyMove(battleState.board, move[0], move[1], battleState.aiColor);
+
+    const colorLabel = battleState.aiColor === BLACK ? "⚫" : "⚪";
+    addLog(`AI ${colorLabel} → (${move[0]}, ${move[1]})`);
+    updateBattleScore(battleState.board);
+
+    if (isGameOver(battleState.board)) {
+        endBattle();
+        return;
+    }
+
+    battleState.currentTurn = battleState.playerColor;
+    doPlayerTurn();
+}
+
+// プレイヤーのターンを準備
+function doPlayerTurn() {
+    const place = getAvailableMoves(battleState.board, battleState.playerColor);
+
+    if (place.length === 0) {
+        addLog("あなたはパスします");
+        battleState.currentTurn = battleState.aiColor;
+        doAiTurn();
+        return;
+    }
+
+    drawBattleBoard(battleState.board, place);
+    const colorLabel = battleState.playerColor === BLACK ? "⚫" : "⚪";
+    battleStatus.textContent = `あなたのターン ${colorLabel} — マスをクリック`;
+}
+
+// 対戦終了
+function endBattle() {
+    const winner = getWinner(battleState.board);
+    drawBattleBoard(battleState.board, []);
+    updateBattleScore(battleState.board);
+
+    if (winner === battleState.playerColor) {
+        battleStatus.textContent = "あなたの勝ち";
+        addLog("あなたの勝ち");
+    } else if (winner === battleState.aiColor) {
+        battleStatus.textContent = "AIの勝ち";
+        addLog("AIの勝ち");
+    } else {
+        battleStatus.textContent = "引き分け";
+        addLog("引き分け");
+    }
+
+    battleState.isRunning = false;
+}
+
+// クリックで手を打つ
+battleCanvas.addEventListener("click", (e) => {
+    if (!battleState.isRunning) return;
+    if (battleState.currentTurn !== battleState.playerColor) return;
+
+    const rect = battleCanvas.getBoundingClientRect();
+    const cell = battleCanvas.width / SIZE;
+    const c = Math.floor((e.clientX - rect.left) / cell);
+    const r = Math.floor((e.clientY - rect.top) / cell);
+
+    if (!canPlace(battleState.board, r, c, battleState.playerColor)) return;
+
+    battleState.board = applyMove(battleState.board, r, c, battleState.playerColor);
+    const colorLabel = battleState.playerColor === BLACK ? "⚫" : "⚪";
+    addLog(`あなた ${colorLabel} → (${r}, ${c})`);
+    updateBattleScore(battleState.board);
+
+    if (isGameOver(battleState.board)) {
+        endBattle();
+        return;
+    }
+
+    battleState.currentTurn = battleState.aiColor;
+    doAiTurn();
+});
+
+// 対戦開始
+btnBattleStart.addEventListener("click", () => {
+    const colorVal = document.querySelector('input[name="player-color"]:checked').value;
+    battleState.playerColor = colorVal === "black" ? BLACK : WHITE;
+    battleState.aiColor = colorVal === "black" ? WHITE : BLACK;
+    battleState.board = createBoard();
+    battleState.currentTurn = BLACK;
+    battleState.isRunning = true;
+
+    battleLog.innerHTML = "";
+    updateBattleScore(battleState.board);
+    addLog("-- 対戦開始 --");
+
+    if(battleState.playerColor === BLACK) {
+        doPlayerTurn();
+    } else {
+        battleState.textContent = "AIのターン...";
+        doAiTurn();
+    }
+});
+
+// 対戦リセット
+btnBattleReset.addEventListener("click", () => {
+    battleState.isRunning = false;
+    drawBoard(battleCanvas, createBoard());
+    battleStatus.textContent = "学習を完了してから対戦してください";
+    scoreBlack.textContent = "2";
+    scoreWhite.textContent = "2";
+    battleLog.innerHTML = "";
+});
