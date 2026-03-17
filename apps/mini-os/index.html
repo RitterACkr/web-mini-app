@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mini-os</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header class="header">
+        <span class="header-title">⚙ mini-os</span>
+        <div class="header-controls">
+            <span class="scheduler-label">Scheduler:</span>
+            <select id="scheduler-select">
+                <option value="fcfs">FCFS</option>
+                <option value="rr" selected>Round Robin</option>
+                <option value="priority">Priority</option>
+            </select>
+            <label class="quantum-label">Quantum:
+                <input id="quantum-input" type="number" value="4" min="1" max="16" />
+            </label>
+            <button id="btn-run" class="btn btn-run">▶ Run</button>
+            <button id="btn-stop" class="btn btn-stop">■ Stop</button>
+            <button id="btn-reset" class="btn btn-reset">↺ Reset</button>
+        </div>
+    </header>
+
+    <!-- メインレイアウト -->
+    <main class="layout">
+
+        <!-- 左: プロセスリスト -->
+        <section class="panel panel-process">
+            <h2 class="panel-title">Process List</h2>
+            <table class="process-table">
+                <thead>
+                    <tr>
+                        <th>PID</th>
+                        <th>Name</th>
+                        <th>State</th>
+                        <th>Priority</th>
+                        <th>Burst</th>
+                    </tr>
+                </thead>
+                <tbody id="process-tbody">
+                    <!-- JS で動作生成 -->
+                </tbody>
+            </table>
+            <div class="add-process-form">
+                <input id="proc-name" type="text" placeholder="Name (e.g. P1)" max="8 " />
+                <input id="proc-burst" type="number" placeholder="Burst" min="1" max="99" value="8" />
+                <input id="proc-priority" type="number" placeholder="Pri" min="1" max="10" value="5" />
+                <button id="btn-add-process" class="btn btn-add">+ Add</button>
+            </div>
+        </section>
+
+        <!-- 右上: CPUタイムライン -->
+        <section class="panel panel-timeline">
+            <h2 class="panel-title">Memory Map <span class="mem-info" id="mem-info"></span></h2>
+            <div id="memory-map" class="memory-map"></div>
+        </section>
+
+    </main>
+
+    <!-- ログパネル -->
+    <footer class="log-panel">
+        <span class="log-label">LOG &gt;</span>
+        <div id="log-output" class="log-output"></div>
+    </footer>
+
+    <script src="src/process.js"></script>
+    <script src="src/memory.js"></script>
+    <script src="src/scheduler.js"></script>
+    <script src="src/main.js"></script>
+</body>
+</html>
