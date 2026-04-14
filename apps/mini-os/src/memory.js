@@ -6,8 +6,6 @@
 // pid === null なら空きブロック
 // =============================================================
 
-const { memo } = require("react");
-
 const MEMORY_SIZE = 100; // 全体のサイズ (単位)
 
 // メモリブロック配列
@@ -55,7 +53,7 @@ function mergeAdjacentFreeBlocks() {
     let i = 0;
     while (i < memoryBlocks.length - 1) {
         const cur  = memoryBlocks[i];
-        const next = memoryBLocks[i + 1];
+        const next = memoryBlocks[i + 1];
         if (cur.pid === null && next.pid === null) {
             memoryBlocks.splice(i, 2, {
                 start: cur.start,
@@ -71,7 +69,7 @@ function mergeAdjacentFreeBlocks() {
 // コンパクション
 function compact() {
     const used = memoryBlocks.filter(b => b.pid != null);
-    const totalFree = memoryBLocks
+    const totalFree = memoryBlocks
         .filter(b => b.pid === null)
         .reduce((sum, b) => sum + b.size, 0);
 

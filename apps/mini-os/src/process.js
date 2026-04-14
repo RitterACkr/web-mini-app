@@ -68,7 +68,7 @@ const VALID_TRANSITIONS = {
 };
 
 function transitionState(proc, nextState) {
-    const allowd = VALID_TRANSITIONS[proc.state];
+    const allowed = VALID_TRANSITIONS[proc.state];
     if (!allowed.includes(nextState)) {
         return `[ERROR] Invalid transition: ${proc.name} ${proc.state} → ${nextState}`;
     }
