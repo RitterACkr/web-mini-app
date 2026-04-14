@@ -27,10 +27,10 @@
     </header>
 
     <!-- メインレイアウト -->
-    <main class="layout">
+    <div class="workspace">
 
-        <!-- 左: プロセスリスト -->
-        <section class="panel panel-process">
+        <!-- 左側パネル: プロセスリスト -->
+        <section class="panel panel-process" id="panel-process">
             <h2 class="panel-title">Process List</h2>
             <table class="process-table">
                 <thead>
@@ -54,23 +54,36 @@
             </div>
         </section>
 
-        <!-- 右上: CPUタイムライン -->
-        <section class="panel panel-timeline">
-            <h2 class="panel-title">CPU Timeline <span class="mem-info" id="mem-info"></span></h2>
-            <div id="gantt-chart" class="gantt-chart"></div>
-            <div id="gantt-legend" class="gantt-legend"></div>
-        </section>
+        <!-- 左右の境界線 -->
+        <div class="divider divider-vertical" id="divider-lr"></div>
 
-        <!-- 右下: メモリマップ -->
-        <section class="panel panel-memory">
-            <h2 class="panel-title">Memory Map <span class="mem-info" id="mem-info"></span></h2>
-            <div id="memory-map" class="memory-map"></div>
-        </section>
+        <!-- 右側 -->
+        <div class="right-pane" id="right-pane">
 
-    </main>
+            <!-- 右上: CPUタイムライン -->
+            <section class="panel panel-timeline" id="panel-timeline">
+                <h2 class="panel-title">CPU Timeline <span class="mem-info" id="mem-info"></span></h2>
+                <div id="gantt-chart" class="gantt-chart"></div>
+                <div id="gantt-legend" class="gantt-legend"></div>
+            </section>
+
+            <!-- 上下の境界線 -->
+            <div class="divider divider-horizontal" id="divider-ud"></div>
+
+            <!-- 右下: メモリマップ -->
+            <section class="panel panel-memory">
+                <h2 class="panel-title">Memory Map <span class="mem-info" id="mem-info"></span></h2>
+                <div id="memory-map" class="memory-map"></div>
+            </section>
+        </div>
+
+    </div>
+
+    <!-- ログパネル上部の境界線 -->
+    <div class="divider divider-horizontal" id="divider-log"></div>
 
     <!-- ログパネル -->
-    <footer class="log-panel">
+    <footer class="log-panel" id="log-panel">
         <span class="log-label">LOG &gt;</span>
         <div id="log-output" class="log-output"></div>
     </footer>

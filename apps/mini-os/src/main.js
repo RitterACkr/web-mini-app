@@ -39,6 +39,8 @@ function bindEvents() {
         setQuantum(q);
         log(`Quantum set to ${q}`, 'info');
     });
+
+    initResizer();
 }
 
 
@@ -289,4 +291,89 @@ function log(text, type = 'info') {
 
 function clearLog() {
     document.getElementById('log-output').innerHTML = '';
+}
+
+
+/* ----------------------
+    ドラッグリサイズ
+ ---------------------- */
+function initResizer() {
+    // 左右
+    const dividerLR = document.getElementById('divider-lr');
+    const panelProcess = document.getElementById('panel-process');
+
+    dividerLR.addEventListener('mousedown', e => {
+        e.preventDefault();
+        dividerLR.classList.add('dragging');
+
+        const onMove = e => {
+            const workspace = document.querySelector('.workspace');
+            const rect = workspace.getBoundingClientRect();
+            let newWidth = e.clientX - rect.left;
+            newWidth = Math.max(180, Math.min(newWidth, workspace.clientWidth * 0.5));
+            panelProcess.style.width = newWidth + 'px';
+        };
+
+        const onUp = () => {
+            dividerLR.classList.remove('dragging');
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+        };
+
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+    });
+
+    // 上下
+    const dividerUD = document.getElementById('divider-ud');
+    const panelTimeline = document.getElementById('panel-timeline');
+
+    dividerUD.addEventListener('mousedown', e => {
+        e.preventDefault();
+        dividerUD.classList.add('dragging');
+
+        const onMove = e => {
+            const rightPane = document.getElementById('right-pane');
+            const rect = rightPane.getBoundingClientRect();
+            let newHeight = e.clientY - rect.top;
+            newHeight = Math.max(80, Math.min(newHeight, rightPane.clientHeight - 60));
+            panelTimeline.style.height = newHeight + 'px';
+        };
+
+        const onUp = () => {
+            dividerUD.classList.remove('dragging');
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+        };
+
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+    });
+
+    // ログパネル上下
+    const dividerLog = document.getElementById('divider-log');
+    const logPanel = document.getElementById('log-panel');
+
+    if (dividerLog && logPanel) {
+        dividerLog.addEventListener('mousedown', e => {
+            e.preventDefault();
+            dividerLog.classList.add('dragging');
+
+            const onMove = e => {
+                const windowHeight = window.innerHeight;
+                let newHeight = windowHeight - e.clientY;
+                newHeight = Math.max(40, Math.min(newHeight, 300));
+                logPanel.style.height = newHeight + 'px';
+            };
+
+            const onUp = () => {
+                dividerLog.classList.remove('dragging');
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+            };
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+    }
 }

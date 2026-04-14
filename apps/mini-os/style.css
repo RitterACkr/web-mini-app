@@ -27,13 +27,17 @@
     /* プロセスカラー */
     --p0: #58a6ff; --p1: #3fb950; --p2: #d29922; --p3: #f85149;
     --p4: #bc8cff; --p5: #39d353; --p6: #ffa657; --p7: #79c0ff;
+
+    /* リサイズ用の初期サイズ */
+    --left-width: 300px;
+    --timeline-height: 60%;
 }
 
 body {
     background: var(--bg);
     color: var(--text);
     font-family: var(--font);
-    font-size: 13px;
+    font-size: 16px;
     height: 100vh;
     display: flex;
     flex-direction: column;
@@ -48,14 +52,14 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 16px;
+    padding: 10px 18px;
     background: var(--bg-panel);
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
 }
 
 .header-title {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: bold;
     color: var(--green);
     letter-spacing: 2px;
@@ -69,19 +73,20 @@ body {
 
 .scheduler-label, .quantum-label {
     color: var(--text-dim);
+    font-size: 14px;
 }
 
 select, input[type="number"] {
     background: var(--bg-panel2);
     color: var(--text);
     border: 1px solid var(--border);
-    padding: 3px 6px;
+    padding: 4px 8px;
     font-family: var(--font);
-    font-size: 12px;
+    font-size: 14px;
 }
 
 #quantum-input {
-    width: 48px;
+    width: 52px;
 }
 
 
@@ -89,12 +94,12 @@ select, input[type="number"] {
     Buttons
 ===================== */
 .btn {
-    padding: 4px 12px;
+    padding: 5px 14px;
     border: 1px solid var(--border);
     background: var(--bg-panel2);
     color: var(--text);
     font-family: var(--font);
-    font-size: 12px;
+    font-size: 13px;
     cursor: pointer;
     transition: background-color 0.15s;
 }
@@ -105,36 +110,88 @@ select, input[type="number"] {
 .btn-add    { border-color: var(--blue);    color: var(--blue); }
 
 /* =====================
-    Layout
+    Workspace
 ===================== */
-.layout {
-    display: grid;
-    grid-template-columns: 280px 1fr;
-    grid-template-rows: 1fr 140px;
-    gap: 1px;
-    background: var(--border);
+.workspace {
+    display: flex;
     flex: 1;
     overflow: hidden;
 }
 
-.panel {
-    background: var(--bg-panel);
-    padding: 10px 12px;
+/* 左側パネル */
+.panel-process  { 
+    width: var(--left-width);
+    min-width: 180px;
+    max-width: 50vw;
+    flex-shrink: 0;
     overflow: auto;
+    background: var(--bg-panel);
+    padding: 12px 14px;
+ }
+
+/* 右側パネル*/
+.right-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
 }
 
-.panel-process  { grid-row: 1 / 3; }
-.panel-timeline { grid-row: 1 / 2; }
-.panel-memory   { grid-row: 2 / 3; }
+.panel-timeline { 
+    height: var(--timeline-height);
+    min-height: 80px;
+    overflow: auto;
+    background: var(--bg-panel);
+    padding: 12px 14px;
+ }
+.panel-memory   { 
+    flex: 1;
+    min-height: 60px;
+    overflow: auto;
+    background: var(--bg-panel);
+    padding: 12px 14px;
+ }
 
+ /* =====================
+    Divider
+===================== */
+.divider {
+    background: var(--border);
+    flex-shrink: 0;
+    position: relative;
+    transition: background 0.15s;
+}
+
+.divider:hover,
+.divider.dragging {
+    background: var(--blue);
+}
+
+.divider-vertical {
+    width: 4px;
+    cursor: col-resize;
+}
+
+.divider-horizontal {
+    height: 4px;
+    cursor: row-resize;
+}
+
+/* =====================
+    Panel Title
+===================== */
 .panel-title {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-dim);
     letter-spacing: 1px;
     text-transform: uppercase;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     border-bottom: 1px solid var(--border);
-    padding-bottom: 4px;
+    padding-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 
@@ -144,26 +201,27 @@ select, input[type="number"] {
 .process-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 12px;
+    font-size: 14px;
 }
 
 .process-table th {
     color: var(--text-dim);
     text-align: left;
-    padding: 3px 4px;
+    padding: 4px 6px;
     border-bottom: 1px solid var(--border);
+    font-size: 13px;
 }
 
 .process-table th {
-    padding: 3px 4px;
+    padding: 4px 6px;
     border-bottom: 1px solid #21262d;
 }
 
 /* 状態バッジ */
 .state-badge {
-    padding: 1px 6px;
+    padding: 2px 7px;
     border-radius: 2px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: bold;
 }
 .state-new      { background: #21262d; color: var(--text-dim); }
@@ -176,14 +234,15 @@ select, input[type="number"] {
 .add-process-form {
     display: flex;
     gap: 4px;
-    margin-top: 10px;
+    margin-top: 12px;
     flex-wrap: wrap;
 }
 
 .add-process-form input {
     flex: 1;
     min-width: 50px;
-    padding: 4px 6px;
+    padding: 5px 7px;
+    font-size: 14px;
 }
 
 
@@ -192,23 +251,24 @@ select, input[type="number"] {
 ===================== */
 .gantt-chart {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 2px;
-    align-content: flex-start;
-    min-height: 60px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    min-height: 36px;
 }
 
 .gantt-block {
-    height: 28px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: bold;
     color: #0d1117;
-    min-width: 24px;
+    min-width: 28px;
+    flex-shrink: 0;
     border-radius: 2px;
-    transition: width 0.1s;
 }
 
 .gantt-idle {
@@ -219,22 +279,22 @@ select, input[type="number"] {
 
 .gantt-legend {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     flex-wrap: wrap;
-    margin-top: 6px;
+    margin-top: 8px;
 }
 
 .legend-item {
     display: flex;
     align-items: center;
-    gap: 4px;
-    font-size: 11px;
+    gap: 5px;
+    font-size: 13px;
     color: var(--text-dim);
 }
 
 .legend-dot {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     border-radius: 2px;
 }
 
@@ -244,10 +304,11 @@ select, input[type="number"] {
 ===================== */
 .memory-map {
     display: flex;
-    height: 36px;
+    height: 40px;
     border: 1px solid var(--border);
     overflow: hidden;
     border-radius: 2px;
+    margin-top: 6px;
 }
 
 .mem-block {
@@ -255,7 +316,7 @@ select, input[type="number"] {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: bold;
     transition: width 0.2s;
     overflow: hidden;
@@ -269,9 +330,10 @@ select, input[type="number"] {
 }
 
 .mem-info {
-    font-size: 10px;
+    font-size: 12px;
     color: var(--text-dim);
     font-weight: normal;
+    text-transform: none;
 }
 
 
@@ -281,26 +343,27 @@ select, input[type="number"] {
 .log-panel {
     display: flex;
     align-items: flex-start;
-    padding: 6px 12px;
+    padding: 8px 14px;
     background: var(--bg-panel);
     border-top: 1px solid var(--border);
     flex-shrink: 0;
-    height: 72px;
-    gap: 8px;
+    height: 80px;
+    gap: 10px;
 }
 
 .log-label {
     color: var(--green);
     flex-shrink: 0;
     padding-top: 2px;
+    font-size: 14px;
 }
 
 .log-output {
     flex: 1;
     overflow-y: auto;
     color: var(--text-dim);
-    font-size: 11px;
-    line-height: 1.6;
+    font-size: 13px;
+    line-height: 1.7;
 }
 
 .log-output .log-line { display: block; }
