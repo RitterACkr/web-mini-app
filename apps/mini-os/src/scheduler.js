@@ -114,7 +114,7 @@ function tick(procTable) {
             running.finishTime = _clock;
             const err = transitionState(running, ProcessState.TERMINATED);
             if (err) logs.push({ type: 'error', text: err });
-            else logs.push({ type: 'ok', text: `[T=${_clock}] ${running.name} finished (TAT=${running.finishTime - running.arrivalTime})` });
+            else logs.push({ type: 'ok', text: `${running.name} finished (TAT=${running.finishTime - running.arrivalTime})` });
 
             free(running.pid);          // メモリ解放
             finished.push(running.pid);
@@ -127,7 +127,7 @@ function tick(procTable) {
         else if (_type === SchedulerType.RR && _quantumLeft <= 0) {
             const err = transitionState(running, ProcessState.READY);
             if (err) logs.push({ type: 'error', text: err });
-            else logs.push({ type: 'warn', text: `[T=${_clock}] ${running.name} preempted (remain=${running.burstRemain})` });
+            else logs.push({ type: 'warn', text: `${running.name} preempted (remain=${running.burstRemain})` });
 
             _ganttFlush(_clock);
             enqueue(running);       // キュー末尾に戻す
@@ -150,7 +150,7 @@ function tick(procTable) {
                 _runningPid = next.pid;
                 _quantumLeft = _quantum;
                 _ganttStart(next, _clock);
-                logs.push({ type: 'info', text: `[T=${_clock}] ${next.name} started running` });
+                logs.push({ type: 'info', text: `${next.name} started running` });
             }
         }
     }

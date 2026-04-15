@@ -356,6 +356,7 @@ select, input[type="number"] {
     flex-shrink: 0;
     height: 80px;
     gap: 10px;
+    overflow: auto;
 }
 
 .log-label {

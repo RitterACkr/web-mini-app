@@ -99,7 +99,7 @@ function simLoop() {
     const { logs, finished } = tick(processTable);
 
     // ログ出力
-    logs.forEach(l => log(l.text, l.type));
+    logs.forEach(l => logWithClock(l.text, l.type));
 
     // 全プロセスが終了したか判定
     const allDone = processTable.length > 0 && processTable.every(p => p.state === ProcessState.TERMINATED);
@@ -146,9 +146,9 @@ function handleAddProcess() {
     if (_isRunning) {
         transitionState(proc, ProcessState.READY);
         enqueue(proc);
-        log(`[T=${getClock()}] ${proc.name} added end enqueued.`, 'info');
+        logWithClock(`${proc.name} added end enqueued.`, 'info');
     } else {
-        log(`${proc.name} added (burst=${burst}, priority=${priority}, mem=${memSize}).`, 'info');
+        logWithClock(`${proc.name} added (burst=${burst}, priority=${priority}, mem=${memSize}).`, 'info');
     }
 
     // フォームのリセット
@@ -307,7 +307,12 @@ function log(text, type = 'info') {
     span.className = `log-line log-${type}`;
     span.textContent = text;
     out.appendChild(span);
-    out.scrollTop = out.scrollHeight;
+    document.getElementById('log-panel').scrollTop = document.getElementById('log-panel').scrollHeight;
+}
+
+function logWithClock(text, type = 'info') {
+    const ts = String(getClock()).padStart(3, '0');
+    log(`[T=${ts}] ${text}`, type);
 }
 
 function clearLog() {
