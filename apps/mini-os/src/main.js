@@ -40,6 +40,8 @@ function bindEvents() {
         log(`Quantum set to ${q}`, 'info');
     });
 
+    document.getElementById('btn-compact').addEventListener('click', handleCompact);
+
     initResizer();
 }
 
@@ -376,4 +378,14 @@ function initResizer() {
             document.addEventListener('mouseup', onUp);
         });
     }
+}
+
+
+/* ----------------------
+    Compact
+ ---------------------- */
+function handleCompact() {
+    compact();
+    log('Memory compacted.', 'info');
+    renderMemoryMap();
 }

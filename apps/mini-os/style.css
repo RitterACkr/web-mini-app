@@ -336,6 +336,12 @@ select, input[type="number"] {
     text-transform: none;
 }
 
+.btn-compact {
+    border-color: var(--purple);
+    color: var(--purple);
+    font-size: 12px;
+    padding: 2px 8px;
+}
 
 /* =====================
     Log Panel
