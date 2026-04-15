@@ -108,6 +108,7 @@ select, input[type="number"] {
 .btn-stop   { border-color: var(--red);     color: var(--red); }
 .btn-reset  { border-color: var(--yellow);  color: var(--yellow); }
 .btn-add    { border-color: var(--blue);    color: var(--blue); }
+.btn-delete { border-color: var(--red);     color: var(--red); }
 
 /* =====================
     Workspace

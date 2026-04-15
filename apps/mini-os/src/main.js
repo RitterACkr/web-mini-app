@@ -161,6 +161,21 @@ function handleAddProcess() {
 
 
 /* ----------------------
+    Compact
+ ---------------------- */
+ function handleDeleteProcess(pid) {
+    const proc = getProcess(pid);
+    if (!proc) return;
+    if (proc.state !== ProcessState.NEW && proc.state !== ProcessState.READY) return;
+
+    free(pid);
+    removeProcess(pid);
+    log(`${proc.name} removed.`, `warn`);
+    renderAll();
+ }
+
+
+/* ----------------------
     描画
  ---------------------- */
 function renderAll() {
@@ -187,6 +202,10 @@ function renderProcTable() {
             <td><span class="state-badge state-${p.state}">${p.state}</span></td>
             <td>${p.priority}</td>
             <td>${p.burstRemain}/${p.burstTotal}</td>
+            <td>${p.state === ProcessState.NEW || p.state === ProcessState.READY
+                ? `<button class="btn btn-delete" onclick="handleDeleteProcess(${p.pid})">✕</button>`
+                : ''
+            }</td>
         `;
         tbody.appendChild(tr);
     });
@@ -389,3 +408,4 @@ function handleCompact() {
     log('Memory compacted.', 'info');
     renderMemoryMap();
 }
+
