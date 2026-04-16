@@ -184,6 +184,7 @@ function renderAll() {
     renderProcTable();
     renderGantt();
     renderMemoryMap();
+    renderStatsPanel();
 }
 
 // プロセステーブル
@@ -299,6 +300,59 @@ function renderStats() {
     log(`――― Stats ――― Avg TAT: ${avgTAT}  |  Avg Wait: ${avgWT}`, 'info');
 }
 
+// 統計パネル
+function renderStatsPanel() {
+    const chart = document.getElementById('stats-chart');
+    chart.innerHTML = '';
+
+    const procs = processTable.filter(p => p.state !== ProcessState.NEW);
+
+    if (procs.length === 0) {
+        chart.innerHTML = '<div style="color: var(--text-dim); font-size: 11px;">No data yet.</div>';
+        return;
+    }
+
+    const maxTAT = processTable.reduce((s, p) => s + p.burstTotal, 0) || 1;
+
+    procs.forEach(p => {
+        const isDone = p.state === ProcessState.TERMINATED;
+
+        const tatVal = isDone ? turnAroundTime(p) : (getClock() - p.arrivalTime);
+
+        const executedClocks = p.burstTotal - p.burstRemain;
+        const wtVal = isDone ? waitingTime(p) : Math.max(0, tatVal - executedClocks);
+
+        const tatPct = (tatVal / maxTAT * 100).toFixed(1);
+        const wtPct = (wtVal / maxTAT * 100).toFixed(1);
+
+
+        const row = document.createElement('div');
+        row.className = 'stats-row';
+        row.innerHTML = `
+            <div class="stats-proc-name" style="color: ${p.color}">
+                ${p.name} ${isDone ? '✔' : '...'}
+            </div>
+            <div class="stats-bar-wrap">
+                <span class="stats-bar-label">TAT</span>
+                <div class="stats-bar-bg">
+                    <div class="stats-bar-fill" style="width: ${tatPct}%; background: ${p.color}; opacity: 0.9">
+                    </div>
+                </div>
+                <span class="stats-bar-value">${tatVal}</span>
+            </div>
+            <div class="stats-bar-wrap">
+                <span class="stats-bar-label">Wait</span>
+                <div class="stats-bar-bg">
+                    <div class="stats-bar-fill" style="width: ${wtPct}%; background: ${p.color}; opacity: 0.5">
+                    </div>
+                </div>
+                <span class="stats-bar-value">${wtVal}</span>
+            </div>
+        `;
+        chart.appendChild(row);
+    });
+}
+
 
 /* ----------------------
     ログ出力
@@ -380,9 +434,9 @@ function initResizer() {
 
     // ログパネル上下
     const dividerLog = document.getElementById('divider-log');
-    const logPanel = document.getElementById('log-panel');
+    const logFooter = document.getElementById('log-footer');
 
-    if (dividerLog && logPanel) {
+    if (dividerLog && logFooter) {
         dividerLog.addEventListener('mousedown', e => {
             e.preventDefault();
             dividerLog.classList.add('dragging');
@@ -391,11 +445,39 @@ function initResizer() {
                 const windowHeight = window.innerHeight;
                 let newHeight = windowHeight - e.clientY;
                 newHeight = Math.max(40, Math.min(newHeight, 300));
-                logPanel.style.height = newHeight + 'px';
+                logFooter.style.height = newHeight + 'px';
             };
 
             const onUp = () => {
                 dividerLog.classList.remove('dragging');
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+            };
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+    }
+
+    // 統計パネル左右
+    const dividerStats = document.getElementById('divider-stats');
+    const statsPanel = document.getElementById('stats-panel');
+
+    if (dividerStats && statsPanel) {
+        dividerStats.addEventListener('mousedown', e => {
+            e.preventDefault();
+            dividerStats.classList.add('dragging');
+
+            const onMove = e => {
+                const logFooter = document.getElementById('log-footer');
+                const rect = logFooter.getBoundingClientRect();
+                let newWidth = rect.right - e.clientX;
+                newWidth = Math.max(120, Math.min(newWidth, logFooter.clientWidth * 0.6));
+                statsPanel.style.width = newWidth + 'px';
+            };
+
+            const onUp = () => {
+                dividerStats.classList.remove('dragging');
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup', onUp);
             };

@@ -347,18 +347,25 @@ select, input[type="number"] {
 }
 
 /* =====================
-    Log Panel
+    Log Footer
 ===================== */
+.log-footer {
+    display: flex;
+    flex-shrink: 0;
+    background: var(--border);
+    height: 240px;
+    gap: 1px;
+}
+
 .log-panel {
     display: flex;
+    flex: 1;
     align-items: flex-start;
     padding: 8px 14px;
     background: var(--bg-panel);
-    border-top: 1px solid var(--border);
-    flex-shrink: 0;
-    height: 80px;
     gap: 10px;
-    overflow: auto;
+    overflow-y: auto;
+    min-width: 0;
 }
 
 .log-label {
@@ -381,3 +388,76 @@ select, input[type="number"] {
 .log-output .log-warn { color: var(--yellow); }
 .log-output .log-error { color: var(--red); }
 .log-output .log-ok { color: var(--green); }
+
+.stats-panel {
+    width: 640px;
+    min-width: 120px;
+    background: var(--bg-panel);
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+.stats-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
+    flex-shrink: 0;
+}
+
+.stats-chart {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.stats-row {
+    margin-bottom: 6px;
+}
+
+.stats-proc-name {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 2px;
+}
+
+.stats-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 2px;
+}
+
+.stats-bar-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    width: 28px;
+    flex-shrink: 0;
+}
+
+.stats-bar-bg {
+    flex: 1;
+    height: 10px;
+    background: var(--bg-panel2);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.stats-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s;
+}
+
+.stats-bar-value {
+    font-size: 10px;
+    color: var(--text-dim);
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+}

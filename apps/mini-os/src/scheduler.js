@@ -55,7 +55,9 @@ function getRunningPid() { return _runningPid; }
     Readyキューへの追加
  ---------------------- */
 function enqueue(proc) {
-    proc.arrivalTime = _clock;
+    if (proc.arrivalTime === 0 && proc.state !== ProcessState.WAITING) {
+        proc.arrivalTime = _clock;
+    }
     if (!_readyQueue.includes(proc.pid)) {
         _readyQueue.push(proc.pid);
     }

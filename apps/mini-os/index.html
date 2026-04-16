@@ -88,9 +88,23 @@
     <div class="divider divider-horizontal" id="divider-log"></div>
 
     <!-- ログパネル -->
-    <footer class="log-panel" id="log-panel">
-        <span class="log-label">LOG &gt;</span>
-        <div id="log-output" class="log-output"></div>
+    <footer class="log-footer" id="log-footer">
+
+        <!-- 左: ログ -->
+        <div class="log-panel" id="log-panel">
+            <span class="log-label">LOG &gt;</span>
+            <div id="log-output" class="log-output"></div>
+        </div>
+
+        <!-- 左右の境界線 -->
+        <div class="divider divider-vertical" id="divider-stats"></div>
+
+        <!-- 右: 統計パネル -->
+        <div class="stats-panel" id="stats-panel">
+            <span class="stats-label">STATS</span>
+            <div id="stats-chart" class="stats-chart"></div>
+        </div>
+
     </footer>
 
     <script src="src/process.js"></script>
