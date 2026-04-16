@@ -23,11 +23,13 @@ window.addEventListener('DOMContentLoaded', () => {
     log('mini-os ready. Add processes and press ▶ Run.', 'info');
 });
 
+// イベント登録の管理
 function bindEvents() {
     document.getElementById('btn-run').addEventListener('click', startSim);
     document.getElementById('btn-stop').addEventListener('click', stopSim);
     document.getElementById('btn-reset').addEventListener('click', resetAll);
     document.getElementById('btn-add-process').addEventListener('click', handleAddProcess);
+    document.getElementById('btn-io-wait').addEventListener('click', handleForceWait);
 
     document.getElementById('scheduler-select').addEventListener('change', e => {
         setSchedulerType(e.target.value);
@@ -414,3 +416,25 @@ function handleCompact() {
     renderMemoryMap();
 }
 
+
+/* ----------------------
+    I/O waiting
+ ---------------------- */
+function handleForceWait() {
+    if (!_isRunning) {
+        logWithClock('Simulation is not running.', 'warn');
+        return;
+    }
+
+    const result = forceWait(processTable);
+    if (!result) {
+        logWithClock('No running process to send to I/O wait.', 'warn');
+        return;
+    }
+    if (typeof result === 'string') {
+        logWithClock(result, 'error');
+        return;
+    }
+
+    logWithClock(`${result.proc.name} → Waiting (I/O: ${result.waitClocks} clocks)`, 'warn');
+}

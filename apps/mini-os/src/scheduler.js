@@ -25,6 +25,9 @@ let _clock          = 0;    // シミュレーション経過クロック数
 let _ganttLog       = [];
 let _ganttCurrent   = null;
 
+// Waitingプロセスの管理
+let _waitingQueue = [];
+
 
 /* ----------------------
     初期化・設定
@@ -100,6 +103,24 @@ function tick(procTable) {
     const finished = [];
 
     _clock++;
+
+    // 0. waitingプロセス
+    _waitingQueue = _waitingQueue.filter(w => {
+        w.remainWait--;
+        if (w.remainWait <= 0) {
+            // Waiting -> Ready
+            const proc = procTable.find(p => p.pid === w.pid);
+            if (proc) {
+                const err = transitionState(proc, ProcessState.READY);
+                if (!err) {
+                    enqueue(proc);
+                    logs.push({ type: 'ok', text: `[T=${_clock}] ${proc.name} I/O done → Ready` });
+                }
+            }
+            return false;
+        }
+        return true;
+    });
 
     // 1. 現在実行中のプロセスを取得
     let running = procTable.find(p => p.pid === _runningPid) || null;
@@ -186,4 +207,24 @@ function _ganttFlush(clock) {
         }
         _ganttCurrent = null;
     }
+}
+
+
+/* --------------------------
+    I/O 待ちに移行
+ ------------------------- */
+function forceWait(procTable) {
+    const running = procTable.find(p => p.pid === _runningPid);
+    if (!running) return null;
+
+    const err = transitionState(running, ProcessState.WAITING);
+    if (err) return err;
+
+    const waitClocks = Math.floor(Math.random() * 6) + 3;
+    _waitingQueue.push({ pid: running.pid, remainWait: waitClocks });
+
+    _ganttFlush(_clock);
+    _runningPid = null;
+
+    return { proc: running, waitClocks };
 }
